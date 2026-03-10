@@ -1,0 +1,52 @@
+package application
+
+import (
+	"net/http"
+	"path/filepath"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	internalsetup "github.com/rajesh_bond/production/internal/internal_setup"
+	tenant "github.com/rajesh_bond/production/internal/tenant"
+	userrole "github.com/rajesh_bond/production/internal/user_role"
+)
+
+func NewRouter(app *App) http.Handler {
+	r := chi.NewRouter()
+
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+
+	// absolute static path
+	staticPath, _ := filepath.Abs("./web/static")
+	fileServer := http.FileServer(http.Dir(staticPath))
+	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
+
+	// Home
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		indexPath, _ := filepath.Abs("./web/index.html")
+		http.ServeFile(w, r, indexPath)
+	})
+
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Health Ok"))
+	})
+
+	// Create Modules (Dependency wiring)
+
+	// Modules(Dependency wiring) and mount routes
+
+	// for internal
+	internalModule := internalsetup.NewModule(app.DB)
+	r.Mount("/internal", internalModule.Router())
+	// for user role
+
+	userRole := userrole.NewModule(app.DB)
+	r.Mount("/user-role", userRole.Router())
+
+	// for tenant
+	tenant := tenant.NewModule(app.DB)
+	r.Mount("/tenant", tenant.Router())
+
+	return r
+}

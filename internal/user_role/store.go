@@ -1,0 +1,92 @@
+package userrole
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"strings"
+
+	"github.com/lib/pq"
+)
+
+type Store struct {
+	db *sql.DB
+}
+
+func NewStore(db *sql.DB) *Store {
+	return &Store{db: db}
+}
+
+func (s *Store) Create(ctx context.Context, dto CreateUserRoleDBDTO) (*UserRole, error) {
+
+	query := `
+	INSERT INTO user_role (user_role, created_by, updated_by)
+	VALUES ($1, $2, $2)
+	RETURNING id, user_role, created_by, updated_by, created_at, updated_at
+	`
+
+	role := &UserRole{}
+
+	err := s.db.QueryRowContext(ctx, query, dto.UserRole, dto.CreatedBy).
+		Scan(&role.ID, &role.UserRole, &role.CreatedBy, &role.UpdatedBy, &role.CreatedAt, &role.UpdatedAt)
+
+	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			return nil, fmt.Errorf("role already exists")
+		}
+		return nil, err
+	}
+
+	return role, nil
+}
+
+func (s *Store) GetRoleIDByName(ctx context.Context, roleName string) (int64, error) {
+	query := `
+	SELECT id FROM user_role
+	WHERE LOWER(user_role) = LOWER($1)
+	`
+
+	var roleID int64
+
+	err := s.db.QueryRowContext(
+		ctx,
+		query,
+		strings.ToLower(roleName)).Scan(&roleID)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, errors.New("Invalid role")
+		}
+		return 0, err
+	}
+
+	return roleID, nil
+
+}
+
+func (s *Store) GetRoleNameByID(ctx context.Context, roleID int64) (string, error) {
+
+	query := `
+
+	SELECT user_role
+	FROM user_role
+	WHERE id = $1
+	`
+
+	var roleName string
+
+	err := s.db.QueryRowContext(
+		ctx,
+		query,
+		roleID,
+	).Scan(&roleName)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", errors.New("role not found")
+		}
+		return "", nil
+	}
+	return roleName, nil
+}

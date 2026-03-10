@@ -1,0 +1,12 @@
+func GenerateToken(userID, username string) (string, error) {
+	claims := map[string]interface{}{
+		"user_id":  userID,
+		"username": username,
+	}
+
+	// set expiration to 1 hour
+	// jwtauth.SetExpiry(claims, time.Now().Add(time.Hour*1))
+	jwtauth.SetIssuedAt(claims, time.Now())
+	_, tokenString, err := tokenAuth.Encode(claims)
+	return tokenString, err
+}
