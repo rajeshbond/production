@@ -9,6 +9,7 @@ import (
 
 	httpSwagger "github.com/swaggo/http-swagger"
 
+	"github.com/rajesh_bond/production/cmd/service"
 	internalsetup "github.com/rajesh_bond/production/internal/internal_setup"
 	tenant "github.com/rajesh_bond/production/internal/tenant"
 	userrole "github.com/rajesh_bond/production/internal/user_role"
@@ -23,6 +24,10 @@ func NewRouter(app *App) http.Handler {
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+
+	//
+
+	tokenAuth := service.GetTokenAuth()
 
 	// static files
 	staticPath, _ := filepath.Abs("./web/static")
@@ -56,7 +61,7 @@ func NewRouter(app *App) http.Handler {
 	r.Mount("/tenant", tenantModule.Router())
 	// Users
 
-	users := users.NewModule(app.DB)
+	users := users.NewModule(app.DB, tokenAuth)
 	r.Mount("/users", users.Router())
 
 	return r

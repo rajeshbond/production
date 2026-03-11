@@ -205,7 +205,7 @@ ORDER BY id
 
 // Get HashPassword by Employee ID
 
-func (s *Store) GetPasswordHashbyEmplopeeID(ctx context.Context, employeeID string) (*TokenPayload, string, error) {
+func (s *Store) GetPasswordHashbyEmplopeeID(ctx context.Context, employeeID string) (*UserPayload, string, error) {
 	var passwordHash string
 
 	query := `
@@ -217,7 +217,7 @@ func (s *Store) GetPasswordHashbyEmplopeeID(ctx context.Context, employeeID stri
 		FROM "user"
 		WHERE employee_id = $1
 	`
-	payload := &TokenPayload{}
+	payload := &UserPayload{}
 
 	err := s.db.QueryRowContext(ctx, query, employeeID).Scan(
 		&payload.UserID,

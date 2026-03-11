@@ -3,7 +3,7 @@ package users
 import (
 	"context"
 
-	"github.com/rajesh_bond/production/internal/auth"
+	"github.com/rajesh_bond/production/cmd/service"
 	"github.com/rajesh_bond/production/internal/common/utils"
 )
 
@@ -52,15 +52,15 @@ func (ser *Service) CreateUser(ctx context.Context, req UserCreateRequest) (*Use
 
 }
 
-func (ser *Service) LoginUser(ctx context.Context, req LoginRequest) (*UserResponse, error) {
+func (ser *Service) LoginUser(ctx context.Context, req LoginRequest) (*LoginResponse, error) {
 
 	// validate request
 	if err := utils.Validate.Struct(req); err != nil {
 		return nil, err
 	}
 
-	TokenPayload, hashedPassword, err := ser.Store.GetPasswordHashbyEmplopeeID(ctx, req.EmployeeID)
-
+	// fetch user data + password
+	tokenPayload, hashedPassword, err := ser.Store.GetPasswordHashbyEmplopeeID(ctx, req.EmployeeID)
 	if err != nil {
 		return nil, err
 	}
@@ -70,9 +70,20 @@ func (ser *Service) LoginUser(ctx context.Context, req LoginRequest) (*UserRespo
 		return nil, err
 	}
 
-	authToken, err := auth.GenerateToken(TokenPayload.UserID, TokenPayload.TenantID)
+	// prepare jwt payload
+	payload := service.TokenPayload{
+		TenantID: tokenPayload.TenantID,
+		UserID:   tokenPayload.UserID,
+		Username: tokenPayload.Username,
+		RoleID:   tokenPayload.RoleID,
+	}
+
+	tokenString, err := service.GenerateToken(payload, req.EmployeeID)
 	if err != nil {
 		return nil, err
 	}
 
+	return &LoginResponse{
+		// UserID: tokenPayload.UserID,
+		Token: tokenString}, nil
 }

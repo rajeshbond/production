@@ -54,9 +54,9 @@ type UserResponseDTO struct {
 
 // Token Payload
 
-type TokenPayload struct {
+type UserPayload struct {
 	TenantID int64  `json:"tenant_id"`
-	UserID   string `json:"user_id"`
+	UserID   int64  `json:"id"`
 	Username string `json:"username"`
 	RoleID   int64  `json:"role_id"`
 }
@@ -67,6 +67,6 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	UserID int64  `json:"user_id"`
-	Token  string `json:"token"`
+	// UserID int64  `json:"user_id"`
+	Token string `json:"token"`
 }
