@@ -6,7 +6,7 @@ package contextkey
 type Key string
 
 // KeyUser is the key used to store the authenticated user ID in the request context.
-const KeyUser Key = "userID"
+const KeyUser Key = "user"
 
 // You can add other context keys here if needed, e.g.:
 // const KeyRequestID Key = "requestID"
