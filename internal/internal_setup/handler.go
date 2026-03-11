@@ -8,29 +8,52 @@ import (
 )
 
 type Handler struct {
-	module *Module
+	service *Service
 }
 
-func NewHandler(m *Module) *Handler {
-	return &Handler{module: m}
+func NewHandler(service *Service) *Handler {
+	return &Handler{service: service}
 }
 
 func (h *Handler) SetupSuperAdmin(w http.ResponseWriter, r *http.Request) {
-	var dto SetupSuperAdminDTO
-	if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+
+	// Allow only POST method
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
 	}
 
-	// TODO: call
-	// call service
-	// creat role
-	// tanent user
+	defer r.Body.Close()
 
-	// ✅ convert UserRole to lowercase
+	var dto SetupSuperAdminDTO
+
+	// Decode JSON body
+	if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
+		log.Println("[SETUP ERROR] invalid request body:", err)
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Normalize role name
 	dto.Role.UserRole = strings.ToLower(dto.Role.UserRole)
 
-	log.Println("[DEV SETUP]", dto)
-	w.WriteHeader(http.StatusCreated)
-	// w.Write([]byte("Super admin created"))
+	log.Println("[DEV SETUP REQUEST]", dto)
 
+	// Call service layer
+	result, err := h.service.SetupSuperAdmin(r.Context(), &dto)
+	if err != nil {
+		log.Println("[SETUP ERROR]", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	log.Println("[SETUP SUCCESS]", result)
+
+	// Send JSON response
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		log.Println("[RESPONSE ERROR]", err)
+	}
 }

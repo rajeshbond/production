@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/rajesh_bond/production/internal/common/response"
 )
@@ -45,5 +46,19 @@ func (s *Service) CreateTenant(ctx context.Context, dto CreateTenantDTO) (*Tenan
 	}
 
 	return TenantResponse, nil
+
+}
+
+func (s *Service) CreateSuperTenantTx(ctx context.Context, tx *sql.Tx, dto CreateTenantRequied) (int64, error) {
+
+	req := CreateTenantDTO{
+		TenantName: dto.TenantName,
+		TenantCode: dto.TenantCode,
+		Address:    dto.Address,
+		CreatedBy:  int64(1),
+		UpdatedBy:  int64(1),
+	}
+
+	return s.store.CreateSuperTenantTx(ctx, tx, req)
 
 }

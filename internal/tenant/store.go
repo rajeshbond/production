@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+
+	"github.com/lib/pq"
 )
 
 type Store struct {
@@ -118,4 +120,36 @@ func (s *Store) GetTenantCodeByID(ctx context.Context, tenantID int64) (string, 
 	}
 
 	return tenantCode, nil
+}
+
+func (s *Store) CreateSuperTenantTx(ctx context.Context, tx *sql.Tx, dto CreateTenantDTO) (int64, error) {
+
+	query := `
+		INSERT INTO tenant (tenant_name,tenant_code,address,created_by,updated_by)
+		VALUES($1,$2,$3,$4,$5)
+		RETURNING id
+	`
+	var tenantID int64
+	err := tx.QueryRowContext(
+		ctx,
+		query,
+		dto.TenantName,
+		dto.TenantCode,
+		dto.Address,
+		dto.CreatedBy,
+		dto.UpdatedBy,
+	).Scan(&tenantID)
+
+	if err != nil {
+
+		// Handle duplicate key error
+		if pqErr, ok := err.(*pq.Error); ok {
+			if pqErr.Code == "23505" {
+				return 0, errors.New("role already exists")
+			}
+		}
+
+		return 0, err
+	}
+	return tenantID, nil
 }

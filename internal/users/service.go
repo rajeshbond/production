@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/rajesh_bond/production/cmd/service"
 	"github.com/rajesh_bond/production/internal/common/utils"
@@ -86,4 +87,26 @@ func (ser *Service) LoginUser(ctx context.Context, req LoginRequest) (*LoginResp
 	return &LoginResponse{
 		// UserID: tokenPayload.UserID,
 		Token: tokenString}, nil
+}
+
+func (s *Service) CreateSuperUserTx(ctx context.Context, tx *sql.Tx, tenantID int64, roleID int64, dto UserSuperRequest) (int64, error) {
+	createdBy := int64(1)
+	hasshedPassword, err := utils.HashPassword(dto.Password)
+	if err != nil {
+		return 0, err
+	}
+	req := UserCreateRequest{
+		TenantID:   tenantID,
+		RoleId:     roleID,
+		EmployeeID: dto.EmployeeID,
+		UserName:   dto.UserName,
+		Phone:      dto.Phone,
+		Email:      dto.Email,
+		Password:   hasshedPassword,
+		CreatedBy:  &createdBy,
+		UpdatedBy:  &createdBy,
+	}
+
+	return s.Store.CreateSuperAdminTx(ctx, tx, req)
+
 }

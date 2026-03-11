@@ -21,5 +21,12 @@ type UserDTO struct {
 type SetupSuperAdminDTO struct {
 	Role   RoleDTO   `json:"role"`
 	Tenant TenantDTO `json:"tenant"`
-	User   UserDTO   `json:"user"`
+	User   UserDTO   `json:"users"`
+}
+
+type SetupResponse struct {
+	TenantID int64  `json:"tenant_id"`
+	RoleID   int64  `json:"role_id"`
+	UserID   int64  `json:"user_id"`
+	Message  string `json:"message"`
 }

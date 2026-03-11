@@ -2,13 +2,20 @@ package users
 
 import "time"
 
+type UserSuperRequest struct {
+	EmployeeID string  `json:"employee_id"`
+	UserName   string  `json:"user_name"`
+	Phone      *string `json:"phone"`
+	Email      *string `json:"email"`
+	Password   string  `json:"password"`
+}
+
 type UserCreateRequest struct {
 	TenantID   int64   `json:"tenant_id" validate:"required"`
 	RoleId     int64   `json:"role_id" validate:"required"`
 	EmployeeID string  `json:"employee_id" validate:"required"`
 	UserName   string  `json:"user_name" validate:"required"`
 	Phone      *string `json:"phone" validate:"required"`
-	Role       *string `json:"role" validate:"required"`
 	Email      *string `json:"email"`
 	Password   string  `json:"password" validate:"required,min=6"`
 	// IsVerified *bool  `json:"is_verified,omitempty"`

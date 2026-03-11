@@ -2,6 +2,7 @@ package users
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/jwtauth/v5"
@@ -84,6 +85,21 @@ func (h *Handler) Test1(w http.ResponseWriter, r *http.Request) {
 		"username":    claims.Username,
 		"message":     "Private route working",
 	}
+	jsonData, err := json.MarshalIndent(resp, "", "  ")
+	if err != nil {
+		log.Println("JSON marshal error:", err)
+		return
+	}
 
+	// jsonData, err := json.Marshal(resp)
+	// if err != nil {
+	// 	log.Println("JSON marshal error:", err) 
+	// 	return
+	// }
+
+	log.Println(string(jsonData))
+
+	// log.Println(resp)
 	response.JSON(w, http.StatusOK, resp)
+	// response.JSON(w, http.StatusOK, string(jsonData))
 }

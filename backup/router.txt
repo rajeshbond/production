@@ -13,7 +13,7 @@ import (
 	internalsetup "github.com/rajesh_bond/production/internal/internal_setup"
 	tenant "github.com/rajesh_bond/production/internal/tenant"
 	userrole "github.com/rajesh_bond/production/internal/user_role"
-	users "github.com/rajesh_bond/production/internal/users"
+	"github.com/rajesh_bond/production/internal/users"
 
 	_ "github.com/rajesh_bond/production/docs"
 )
@@ -25,9 +25,11 @@ func NewRouter(app *App) http.Handler {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	//
+
 	tokenAuth := service.GetTokenAuth()
 
-	// Static files
+	// static files
 	staticPath, _ := filepath.Abs("./web/static")
 	fileServer := http.FileServer(http.Dir(staticPath))
 	r.Handle("/static/*", http.StripPrefix("/static/", fileServer))
@@ -38,31 +40,29 @@ func NewRouter(app *App) http.Handler {
 		http.ServeFile(w, r, indexPath)
 	})
 
-	// Health check
+	// Health
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Health Ok"))
 	})
 
-	// Swagger
+	// ✅ Swagger Route
 	r.Get("/swagger/*", httpSwagger.WrapHandler)
 
-	// ---------------- MODULES ----------------
+	// Modules ------------->
 
-	// Internal setup
+	// Internal Modules
 	internalModule := internalsetup.NewModule(app.DB)
 	r.Mount("/internal", internalModule.Router())
-
-	// User Role
-	userRoleModule := userrole.NewModule(app.DB)
-	r.Mount("/user-role", userRoleModule.Router())
-
-	// Tenant
+	// User role
+	userRole := userrole.NewModule(app.DB)
+	r.Mount("/user-role", userRole.Router())
+	// tenant
 	tenantModule := tenant.NewModule(app.DB)
 	r.Mount("/tenant", tenantModule.Router())
-
 	// Users
-	usersModule := users.NewModule(app.DB, tokenAuth)
-	r.Mount("/users", usersModule.Router())
+
+	users := users.NewModule(app.DB, tokenAuth)
+	r.Mount("/users", users.Router())
 
 	return r
 }

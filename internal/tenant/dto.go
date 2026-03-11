@@ -16,6 +16,7 @@ type CreateTenantDTO struct {
 	TenantCode string `json:"tenant_code"`
 	Address    string `json:"address"`
 	CreatedBy  int64  `json:"created_by"`
+	UpdatedBy  int64  `json:"updated_by"`
 }
 
 // Update Tenant DTO

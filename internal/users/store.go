@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/lib/pq"
 	"github.com/rajesh_bond/production/internal/common/response"
 )
 
@@ -235,3 +236,78 @@ func (s *Store) GetPasswordHashbyEmplopeeID(ctx context.Context, employeeID stri
 	}
 	return payload, passwordHash, nil
 }
+
+func (s *Store) CreateSuperAdminTx(ctx context.Context, tx *sql.Tx, dto UserCreateRequest) (int64, error) {
+
+	query := `
+		INSERT INTO "user" 
+		(tenant_id, role_id, employee_id, user_name, phone, email, password, created_by, updated_by)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+		RETURNING id
+	`
+
+	var id int64
+
+	err := tx.QueryRowContext(
+		ctx,
+		query,
+		dto.TenantID,
+		dto.RoleId,
+		dto.EmployeeID,
+		dto.UserName,
+		dto.Phone,
+		dto.Email,
+		dto.Password,
+		dto.CreatedBy,
+		dto.UpdatedBy,
+	).Scan(&id)
+
+	if err != nil {
+
+		// Handle duplicate key error
+		if pqErr, ok := err.(*pq.Error); ok {
+			if pqErr.Code == "23505" {
+				return 0, errors.New("user already exists")
+			}
+		}
+
+		return 0, err
+	}
+
+	return id, nil
+}
+
+// func (s *Store) CreateSuperAdminTx(ctx context.Context, tx *sql.Tx, dto UserCreateRequest) (int64, error) {
+
+// 	query := `
+// 		INSERT INTO "user" (tenant_id,role_id,employee_id,user_name,phone,email,password,created_by,updated_by)
+// 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8)
+// 		RETURNING id
+// 	`
+
+// 	var id int64
+// 	err := tx.QueryRowContext(ctx, query,
+// 		dto.TenantID,
+// 		dto.RoleId,
+// 		dto.EmployeeID,
+// 		dto.UserName,
+// 		dto.Phone,
+// 		dto.Email,
+// 		dto.Password,
+// 		dto.CreatedBy,
+// 		dto.UpdatedBy,
+// 	).Scan(&id)
+// 	if err != nil {
+
+// 		// Handle duplicate key error
+// 		if pqErr, ok := err.(*pq.Error); ok {
+// 			if pqErr.Code == "23505" {
+// 				return 0, errors.New("User already exists")
+// 			}
+// 		}
+
+// 		return 0, err
+// 	}
+
+// 	return id, nil
+// }

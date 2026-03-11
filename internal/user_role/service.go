@@ -2,6 +2,7 @@ package userrole
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 )
 
@@ -37,4 +38,18 @@ func (s *Service) Create(
 		CreatedAt: role.CreatedAt,
 		UpdatedAt: role.UpdatedAt,
 	}, nil
+}
+
+func (s *Service) CreateRoleTx(ctx context.Context, tx *sql.Tx, role string) (int64, error) {
+
+	createdBy := int64(1)
+
+	dto := CreateUserRoleDTO{
+		UserRole:  strings.ToLower(role),
+		CreatedBy: &createdBy,
+		UpdatedBy: &createdBy,
+	}
+
+	return s.store.CreateRoleSuperTx(ctx, tx, dto)
+
 }

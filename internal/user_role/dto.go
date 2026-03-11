@@ -5,6 +5,7 @@ import "time"
 type CreateUserRoleDTO struct {
 	UserRole  string `json:"user_role"`
 	CreatedBy *int64 `json:"created_by,omitempty"`
+	UpdatedBy *int64 `json:"updated_at,omitempty"`
 }
 
 type UserRoleResponseDTO struct {
