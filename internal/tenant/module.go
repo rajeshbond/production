@@ -5,8 +5,8 @@ import (
 )
 
 type Module struct {
-	handler *Handler
-	service *Service
+	Handler *Handler
+	Service *Service
 	store   *Store
 }
 
@@ -17,7 +17,7 @@ func NewModule(db *sql.DB) *Module {
 
 	return &Module{
 		store:   store,
-		service: service,
-		handler: handler,
+		Service: service,
+		Handler: handler,
 	}
 }

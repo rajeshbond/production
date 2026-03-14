@@ -19,7 +19,6 @@ func Authenticator(tokenAuth *jwtauth.JWTAuth) func(next http.Handler) http.Hand
 	return jwtauth.Authenticator(tokenAuth)
 }
 
-// UserContextInjector extracts JWT claims and stores them in context
 func UserContextInjector(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -50,6 +49,11 @@ func UserContextInjector(next http.Handler) http.Handler {
 
 		if v, ok := claims["role_id"].(float64); ok {
 			userClaims.RoleID = int64(v)
+		}
+
+		// NEW ROLE FIELD
+		if v, ok := claims["user_role"].(string); ok {
+			userClaims.Role = v
 		}
 
 		if v, ok := claims["iat"].(float64); ok {

@@ -3,6 +3,7 @@ package userrole
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 )
 
@@ -19,13 +20,26 @@ func (s *Service) Create(
 	dto CreateUserRoleDTO,
 ) (*UserRoleResponseDTO, error) {
 
-	// fmt.Printf("DTO:%+V\n", dto)
-	dbDTO := CreateUserRoleDBDTO{
-		UserRole:  strings.ToLower(dto.UserRole),
-		CreatedBy: dto.CreatedBy,
+	fmt.Println("Service", dto)
+
+	sendrole := dto.UserRole
+
+	if sendrole == "" {
+		return nil, fmt.Errorf("user_role is required")
 	}
 
-	role, err := s.store.Create(ctx, dbDTO)
+	exist, err := s.store.RoleInDB(ctx, sendrole)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if exist {
+		return nil, fmt.Errorf("role already exists Rajesh ")
+	}
+
+	// role, err := s.store.Create(ctx, dto)
+	role, err := s.store.Create(ctx, dto)
 	if err != nil {
 		return nil, err
 	}
@@ -40,6 +54,7 @@ func (s *Service) Create(
 	}, nil
 }
 
+// This is for intial route only allowed in developemt phase
 func (s *Service) CreateRoleTx(ctx context.Context, tx *sql.Tx, role string) (int64, error) {
 
 	createdBy := int64(1)
@@ -52,4 +67,9 @@ func (s *Service) CreateRoleTx(ctx context.Context, tx *sql.Tx, role string) (in
 
 	return s.store.CreateRoleSuperTx(ctx, tx, dto)
 
+}
+
+func (s *Service) GetRoleNameByID(ctx context.Context, roleID int64) (string, error) {
+
+	return s.store.GetRoleNameByID(ctx, roleID)
 }

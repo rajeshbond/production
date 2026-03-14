@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/joho/godotenv"
-
 )
 
 var tokenAuth *jwtauth.JWTAuth
@@ -37,6 +36,7 @@ func GenerateToken(payload TokenPayload, employeeId string) (string, error) {
 		"username":    payload.Username,
 		"role_id":     payload.RoleID,
 		"employee_id": employeeId,
+		"user_role":   payload.Role,
 	}
 
 	jwtauth.SetIssuedAt(claims, time.Now())

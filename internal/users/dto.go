@@ -65,7 +65,7 @@ type UserPayload struct {
 	TenantID int64  `json:"tenant_id"`
 	UserID   int64  `json:"id"`
 	Username string `json:"username"`
-	RoleID   int64  `json:"role_id"`
+	RoleID   int64
 }
 
 type LoginRequest struct {

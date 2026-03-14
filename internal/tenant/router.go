@@ -11,6 +11,6 @@ func (m *Module) Router() chi.Router {
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Health Ok"))
 	})
-	r.Post("/createtenant", m.handler.CreateTenant)
+	r.Post("/createtenant", m.Handler.CreateTenant)
 	return r
 }

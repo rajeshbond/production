@@ -9,11 +9,15 @@ import (
 )
 
 type Service struct {
-	Store *Store
+	Store       *Store
+	RoleProvide RoleProvide
 }
 
-func NewService(store *Store) *Service {
-	return &Service{Store: store}
+func NewService(store *Store, roleProvider RoleProvide) *Service {
+	return &Service{
+		Store:       store,
+		RoleProvide: roleProvider,
+	}
 }
 
 func (ser *Service) CreateUser(ctx context.Context, req UserCreateRequest) (*UserResponse, error) {
@@ -71,12 +75,28 @@ func (ser *Service) LoginUser(ctx context.Context, req LoginRequest) (*LoginResp
 		return nil, err
 	}
 
+	role, err := ser.RoleProvide.GetRoleNameByID(ctx, tokenPayload.RoleID)
+	if err != nil {
+		return nil, err
+	}
+
+	// role, err := ser.RoleProvide.GetRoleNameByID(ctx, tokenPayload.RoleID)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// role, err := ser.RoleProvide.GetRoleNameByID(ctx, tokenPayload.RoleID)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
 	// prepare jwt payload
 	payload := service.TokenPayload{
 		TenantID: tokenPayload.TenantID,
 		UserID:   tokenPayload.UserID,
 		Username: tokenPayload.Username,
 		RoleID:   tokenPayload.RoleID,
+		Role:     role,
 	}
 
 	tokenString, err := service.GenerateToken(payload, req.EmployeeID)

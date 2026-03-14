@@ -5,4 +5,5 @@ type TokenPayload struct {
 	UserID   int64  `json:"user_id"`
 	Username string `json:"username"`
 	RoleID   int64  `json:"role_id"`
+	Role     string `json:"user_role"`
 }

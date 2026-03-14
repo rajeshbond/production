@@ -26,7 +26,7 @@ func (m *Module) Router() chi.Router {
 			w.Write([]byte("test1 Ok"))
 		})
 
-		r.Post("/createrole", m.handler.Create)
+		// r.Post("/createrole", m.handler.Create)
 
 	})
 
@@ -36,6 +36,9 @@ func (m *Module) Router() chi.Router {
 		r.Use(auth.Verifier(tokenAuth))
 		r.Use(auth.Authenticator(tokenAuth))
 		r.Use(auth.UserContextInjector)
+		// Create User role
+		r.Post("/createrole", m.Handler.Create)
+		r.Post("/test", m.Handler.TestRole1)
 	})
 
 	return r

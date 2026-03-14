@@ -4,8 +4,12 @@ import "time"
 
 type CreateUserRoleDTO struct {
 	UserRole  string `json:"user_role"`
-	CreatedBy *int64 `json:"created_by,omitempty"`
-	UpdatedBy *int64 `json:"updated_at,omitempty"`
+	CreatedBy *int64 `json:"created_by"`
+	UpdatedBy *int64 `json:"updated_by"`
+}
+
+type CreateRole struct {
+	UserRole string `json:"user_role" validate:"required"`
 }
 
 type UserRoleResponseDTO struct {
@@ -15,9 +19,4 @@ type UserRoleResponseDTO struct {
 	UpdatedBy *int64    `json:"updated_by,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-}
-
-type CreateUserRoleDBDTO struct {
-	UserRole  string
-	CreatedBy *int64
 }

@@ -2,6 +2,7 @@ package userrole
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/rajesh_bond/production/internal/auth"
@@ -44,19 +45,43 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := claims.UserID
+	role := claims.Role
 
-	// Assign created_by
-	dto.CreatedBy = &userID
+	fmt.Println("Role:-", role)
 
-	// Call service
-	role, err := h.service.Create(ctx, dto)
+	if role != "superadmin" {
+		response.Error(w, http.StatusUnauthorized, "You are not Authorized")
+		return
+	}
+
+	createdRole, err := h.service.Create(ctx, dto)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	response.JSON(w, http.StatusCreated, role)
+	// Assign created_by
+	// dto.CreatedBy = &userID
+
+	// Call service
+	// role, err := h.service.Create(ctx,dto)
+	// if err != nil {
+	// 	response.Error(w, http.StatusInternalServerError, err.Error())
+	// 	return
+	// }
+
+	response.JSON(w, http.StatusCreated, createdRole)
+}
+
+func (h *Handler) TestRole1(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	// Get JWT claims from middleware
+	claims, _ := auth.GetUserClaimsFromContext(ctx)
+	fmt.Println(claims)
+	response.JSON(w, http.StatusOK, claims)
+
 }
 
 // CreateUserRole godoc

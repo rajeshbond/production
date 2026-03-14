@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	application "github.com/rajesh_bond/production/Application"
+	Application "github.com/rajesh_bond/production/Application"
 	"github.com/rajesh_bond/production/internal/common/utils"
 
 	_ "github.com/rajesh_bond/production/docs"
@@ -21,7 +21,7 @@ import (
 
 func main() {
 	utils.InitValidator()
-	app := application.NewApp()
+	app := Application.NewApp()
 	defer app.DB.Close()
 	if err := app.Start(); err != nil {
 		log.Fatal(err)
