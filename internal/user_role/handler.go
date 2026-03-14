@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/rajesh_bond/production/internal/auth"
 	"github.com/rajesh_bond/production/internal/common/response"
@@ -45,7 +46,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	role := claims.Role
+	role := strings.ToLower(claims.Role)
+	dto.UserRole = strings.ToLower(dto.UserRole)
 
 	fmt.Println("Role:-", role)
 

@@ -39,7 +39,11 @@ func (s *Store) Create(ctx context.Context, dto CreateUserRoleDTO) (*UserRole, e
 
 	role := &UserRole{}
 
-	err := s.db.QueryRowContext(ctx, query, dto.UserRole, dto.CreatedBy).
+	err := s.db.QueryRowContext(
+		ctx,
+		query,
+		strings.ToLower(dto.UserRole),
+		dto.CreatedBy).
 		Scan(&role.ID, &role.UserRole, &role.CreatedBy, &role.UpdatedBy, &role.CreatedAt, &role.UpdatedAt)
 
 	if err != nil {
