@@ -31,12 +31,13 @@ func GetTokenAuth() *jwtauth.JWTAuth {
 func GenerateToken(payload TokenPayload, employeeId string) (string, error) {
 
 	claims := map[string]interface{}{
-		"tenant_id":   payload.TenantID,
-		"user_id":     payload.UserID,
-		"username":    payload.Username,
-		"role_id":     payload.RoleID,
-		"employee_id": employeeId,
-		"user_role":   payload.Role,
+		"tenant_id":    payload.TenantID,
+		"user_id":      payload.UserID,
+		"username":     payload.Username,
+		"role_id":      payload.RoleID,
+		"employee_id":  employeeId,
+		"user_role":    payload.Role,
+		"subsrciption": payload.Subsrciption,
 	}
 
 	jwtauth.SetIssuedAt(claims, time.Now())

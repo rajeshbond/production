@@ -40,3 +40,17 @@ type TenantResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+type IsVerfiedRequest struct {
+	TenantCode string `json:"tenant_code" validate:"required"`
+}
+
+type UpdateTenantDTO struct {
+	TenantName        *string `json:"tenant_name"`
+	ContactPersonName *string `json:"contact_person_name"`
+	ContactPhone      *string `json:"contact_phone"`
+	ContactEmail      *string `json:"contact_email"`
+	Address           *string `json:"address"`
+	IsActive          *bool   `json:"is_active"`
+	UpdatedBy         *int64  `json:"updated_by"`
+}

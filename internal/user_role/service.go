@@ -35,7 +35,7 @@ func (s *Service) Create(
 	}
 
 	if exist {
-		return nil, fmt.Errorf("role already exists Rajesh ")
+		return nil, fmt.Errorf("role already exists")
 	}
 
 	// role, err := s.store.Create(ctx, dto)

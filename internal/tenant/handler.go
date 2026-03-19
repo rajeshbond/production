@@ -1,33 +1,75 @@
 package tenant
 
+// Index - Handler
+//////////////////////////////////////
+
+// 1. Create Teanant
+
+// 2. Tenant Verification
+
+//////////////////////////////////////
+
+//////////////////////////////////////
+// Code Starts Here
+//////////////////////////////////////
+
+// Imports
+
 import (
 	"encoding/json"
+
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator"
 	"github.com/rajesh_bond/production/internal/auth"
 	"github.com/rajesh_bond/production/internal/common/response"
 )
 
+// structs
+
 type Handler struct {
 	service *Service
 }
 
+// Struct connstructor
 func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
+// Validator
 var validate = validator.New()
 
+// 1. Create Teanant
 func (h *Handler) CreateTenant(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	var req CreateTenantRequied
+	var req CreateTenantDTO
+
+	// Get JWT claims from context
+	claims, ok := auth.GetUserClaimsFromContext(ctx)
+	if !ok {
+		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
+		return
+	}
+
+	// user id from token
+	role := claims.Role
+
+	if !auth.IsSuper(role) {
+		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
+		return
+	}
+
+	// Decode Json safely
+
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
 
 	// Decode request
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		response.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := decoder.Decode(&req); err != nil {
+		response.Error(w, http.StatusBadRequest, response.InvalidRequest)
 		return
 	}
 
@@ -37,92 +79,95 @@ func (h *Handler) CreateTenant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get JWT claims from context
-	claims, ok := auth.GetUserClaimsFromContext(ctx)
-	if !ok {
-		response.Error(w, http.StatusUnauthorized, "unauthorized")
-		return
-	}
+	// Create tenant
 
-	// user id from token
-	userID := claims.UserID
-
-	dto := CreateTenantDTO{
-		TenantName: req.TenantName,
-		TenantCode: req.TenantCode,
-		Address:    req.Address,
-		CreatedBy:  userID,
-	}
-
-	tenant, err := h.service.CreateTenant(ctx, dto)
+	tenant, err := h.service.CreateTenant(ctx, req)
 	if err != nil {
 		response.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	response.JSON(w, http.StatusCreated, tenant)
+
 }
 
-// func (h *Handler) CreateTenant(w http.ResponseWriter, r *http.Request) {
-// 	ctx := r.Context()
+// 2. Tenant Verification
+func (h *Handler) VerifyTenant(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-// 	var req CreateTenantRequied
+	var req IsVerfiedRequest
 
-// 	// ✅ Decode JSON properly
-// 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-// 		response.Error(w, http.StatusBadRequest, "invalid request body")
-// 		return
-// 	}
+	claims, ok := auth.GetUserClaimsFromContext(ctx)
+	if !ok {
+		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
+		return
+	}
 
-// 	if err := validate.Struct(req); err != nil {
-// 		response.Error(w, http.StatusBadRequest, err.Error())
-// 		return
-// 	}
+	// user id from token
+	role := claims.Role
 
-// 	// ✅ Get user ID from middleware context
-// 	userID := auth.GetUserIDFromContext(ctx)
+	if !auth.IsSuper(role) {
+		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
+		return
+	}
 
-// 	// if userID == "" {
-// 	// 	response.Error(w, http.StatusUnauthorized, "unauthorized")
-// 	// 	return
-// 	// }
-// 	var id int64
-// 	if userID != "" {
+	// Decode Json safely
 
-// 		id, err := strconv.ParseInt(userID, 10, 64)
-// 		fmt.Println("Handdler", id)
-// 		fmt.Println("Inside if")
-// 		if err != nil {
-// 			response.Error(w, http.StatusBadRequest, "Invalid user ID in token")
-// 			return
-// 		}
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
 
-// 		// fmt.Printf("DTO Handler :%+v", dto)
-// 	} else {
+	// Decode request
+	if err := decoder.Decode(&req); err != nil {
+		response.Error(w, http.StatusBadRequest, response.InvalidRequest)
+		return
+	}
 
-// 		id = int64(1)
-// 		// fmt.Println("=====inside else")
+	// Validate request
+	if err := validate.Struct(req); err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
-// 		// fmt.Printf("DTO Handler else :%+v", dto)
+	resp, err := h.service.TenantVerifcation(ctx, req.TenantCode)
 
-// 	}
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
+	}
 
-// 	var dto = CreateTenantDTO{
-// 		TenantName: req.TenantName,
-// 		TenantCode: req.TenantCode,
-// 		Address:    req.Address,
-// 		CreatedBy:  id,
-// 	}
+	response.JSON(w, http.StatusOK, resp)
+}
 
-// 	// fmt.Printf("DTO Handler: %+v\n", dto)
+// 3. Delete Tenant
 
-// 	// ✅ Call service correctly
-// 	tenant, err := h.service.CreateTenant(ctx, dto)
-// 	if err != nil {
-// 		response.Error(w, http.StatusBadRequest, err.Error())
-// 		return
-// 	}
+func (h *Handler) DeleteTenant(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 
-// 	// // ✅ Success response
-// 	response.JSON(w, http.StatusCreated, tenant)
-// }
+	// Get tenant code from request
+	
+	tenantCode := chi.URLParam(r,"tenant_code")
+
+	claims, ok := auth.GetUserClaimsFromContext(ctx)
+	if !ok {
+		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
+		return
+	}
+
+	// user id from token
+	role := claims.Role
+
+	if !auth.IsSuper(role) {
+		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
+		return
+	}
+
+	// Decode Json safely
+	
+	okDeleted, err := h.service.DeleteTenant(ctx,tenantCode, claims.UserID)
+
+	if err!=nil{
+		http.Error(w,err.Error(),http.StatusBadRequest)
+		return
+	}
+
+	response.JSON(w, http.StatusOK, okDeleted)
+}

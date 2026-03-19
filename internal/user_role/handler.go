@@ -51,9 +51,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Role:-", role)
 
-	if role != "superadmin" {
-		response.Error(w, http.StatusUnauthorized, "You are not Authorized")
-		return
+	if !auth.IsSuper(role) {
+		response.Error(w, http.StatusUnauthorized, "Yoar and not authorized")
 	}
 
 	createdRole, err := h.service.Create(ctx, dto)
