@@ -27,7 +27,9 @@ func (m *Module) Router() chi.Router {
 		// Create User Tenant
 		r.Post("/createtenant", m.Handler.CreateTenant)
 		r.Post("/verifytenant", m.Handler.VerifyTenant)
+		r.Patch("/updatetenant/{tenant_code}", m.Handler.UpdateTenant)
 		r.Delete("/deletetenant/{tenant_code}", m.Handler.DeleteTenant)
+
 	})
 	return r
 }

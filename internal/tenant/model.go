@@ -3,10 +3,13 @@ package tenant
 import "time"
 
 type Tenant struct {
-	ID         int64  `db:"id"`
-	TenantName string `db:"tenant_name"`
-	TenantCode string `db:"tenant_code"`
-	Address    string `db:"address"`
+	ID                int64   `db:"id"`
+	TenantName        string  `db:"tenant_name"`
+	TenantCode        string  `db:"tenant_code"`
+	ContactPersonName *string `db:"contact_person_name"`
+	ContactPhone      *string `db:"contact_phone"`
+	ContactEmail      *string `db:"contact_email"`
+	Address           *string `db:"address"`
 
 	IsVerified bool `db:"is_verified"`
 	IsActive   bool `db:"is_active"`

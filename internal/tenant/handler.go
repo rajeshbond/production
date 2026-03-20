@@ -17,6 +17,7 @@ package tenant
 
 import (
 	"encoding/json"
+	"errors"
 
 	"net/http"
 
@@ -143,8 +144,8 @@ func (h *Handler) DeleteTenant(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// Get tenant code from request
-	
-	tenantCode := chi.URLParam(r,"tenant_code")
+
+	tenantCode := chi.URLParam(r, "tenant_code")
 
 	claims, ok := auth.GetUserClaimsFromContext(ctx)
 	if !ok {
@@ -161,13 +162,79 @@ func (h *Handler) DeleteTenant(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Decode Json safely
-	
-	okDeleted, err := h.service.DeleteTenant(ctx,tenantCode, claims.UserID)
 
-	if err!=nil{
-		http.Error(w,err.Error(),http.StatusBadRequest)
+	okDeleted, err := h.service.DeleteTenant(ctx, tenantCode, claims.UserID)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	response.JSON(w, http.StatusOK, okDeleted)
+}
+
+// 4. Update Tenant
+
+func (h *Handler) UpdateTenant(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	// 1. Get tenant_code from URL param
+	tenantCode := chi.URLParam(r, "tenant_code")
+	if tenantCode == "" {
+		response.Error(w, http.StatusBadRequest, TenantCodeRequired)
+		return
+	}
+
+	// 2. Decode request body
+	var req UpdateTenantDTO
+
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&req); err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// 3. Ensure at least one field is provided (PATCH validation)
+	if req.TenantName == nil &&
+		req.ContactPersonName == nil &&
+		req.ContactPhone == nil &&
+		req.ContactEmail == nil &&
+		req.Address == nil &&
+		req.IsActive == nil &&
+		req.UpdatedBy == nil {
+
+		response.Error(w, http.StatusBadRequest, "At least one field is required")
+		return
+	}
+
+	// 4. Call service
+	updated, err := h.service.UpdateTenant(ctx, tenantCode, req)
+	if err != nil {
+
+		switch {
+		case errors.Is(err, ErrTenantCodeRequired):
+			response.Error(w, http.StatusBadRequest, err.Error())
+
+		case errors.Is(err, ErrTenantCodeNotFount):
+			response.Error(w, http.StatusNotFound, err.Error())
+
+		case errors.Is(err, ErrTenantNotUpdated):
+			response.Error(w, http.StatusConflict, err.Error())
+
+		default:
+			response.Error(w, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	// 5. Success response
+	resp := map[string]interface{}{
+		"success": updated,
+		"message": "tenant updated successfully",
+	}
+
+	response.JSON(w, http.StatusOK, resp)
 }

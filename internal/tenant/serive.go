@@ -20,6 +20,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/rajesh_bond/production/internal/common/response"
 )
@@ -159,4 +161,120 @@ func (ser *Service) DeleteTenant(ctx context.Context, tenantCode string, deleted
 
 	return TenantNotDeleted, nil
 
+}
+
+// 5.Update Tenant
+
+func (ser *Service) UpdateTenant(ctx context.Context, tenantCode string, dto UpdateTenantDTO) (bool, error) {
+
+	// Normalize tenant code
+	tenantCode = strings.ToLower(strings.TrimSpace(tenantCode))
+
+	// fmt.Println("tenantCode:-", tenantCode)
+
+	if tenantCode == "" {
+		return false, ErrTenantCodeRequired
+	}
+
+	// 1. Get existing tenant
+	existing, err := ser.store.GetTenantbyCode(ctx, tenantCode)
+	if err != nil {
+		return false, fmt.Errorf("fetch tenant failed: %w", err)
+	}
+
+	if existing == nil {
+		return false, fmt.Errorf("%w: tenant_code=%s", ErrTenantCodeNotFount, tenantCode)
+	}
+	if existing.IsDeleted {
+		return false, ErrTenantDeletedInPast
+	}
+
+	// 2. Apply updates
+	isChanged := false
+
+	if dto.TenantName != nil {
+		val := strings.TrimSpace(*dto.TenantName)
+		if val != "" && val != existing.TenantName {
+			existing.TenantName = val
+			isChanged = true
+		}
+	}
+
+	if dto.ContactPersonName != nil {
+		val := strings.TrimSpace(*dto.ContactPersonName)
+		if val != "" && val != *existing.ContactPersonName {
+			existing.ContactPersonName = &val
+			isChanged = true
+		}
+	}
+
+	if dto.ContactEmail != nil {
+		val := strings.TrimSpace(*dto.ContactEmail)
+		if val != "" && val != *existing.ContactEmail {
+			existing.ContactEmail = &val
+			isChanged = true
+		}
+	}
+
+	if dto.ContactPhone != nil {
+		val := strings.TrimSpace(*dto.ContactPhone)
+		if val != "" && val != *existing.ContactPhone {
+			existing.ContactPhone = &val
+			isChanged = true
+		}
+	}
+
+	if dto.Address != nil {
+		val := strings.TrimSpace(*dto.Address)
+		if val != "" && val != *existing.Address {
+			existing.Address = &val
+			isChanged = true
+		}
+	}
+
+	if dto.IsActive != nil {
+		if *dto.IsActive != existing.IsActive {
+			existing.IsActive = *dto.IsActive
+			isChanged = true
+		}
+	}
+
+	if dto.UpdatedBy != nil {
+		existing.UpdatedBy = dto.UpdatedBy
+		isChanged = true
+	}
+
+	// 3. No changes → skip DB
+	if !isChanged {
+		return false, ErrTenantNotUpdated
+	}
+
+	// 4. Update timestamp
+	existing.UpdatedAt = time.Now().UTC()
+
+	// 5. Call store
+
+	existingTenant := &Tenant{
+		ID:                existing.ID,
+		TenantName:        existing.TenantName,
+		TenantCode:        existing.TenantCode,
+		ContactPersonName: existing.ContactPersonName,
+		ContactPhone:      existing.ContactPhone,
+		ContactEmail:      existing.ContactEmail,
+		Address:           existing.Address,
+		IsVerified:        existing.IsVerified,
+		IsActive:          existing.IsActive,
+		IsDeleted:         existing.IsDeleted,
+		CreatedBy:         existing.CreatedBy,
+		UpdatedBy:         existing.UpdatedBy,
+		CreatedAt:         existing.CreatedAt,
+		UpdatedAt:         existing.UpdatedAt,
+	}
+
+	updated, err := ser.store.UpdateTenant(ctx, existingTenant)
+	if err != nil {
+		return false, fmt.Errorf("update tenant failed: %w", err)
+	}
+
+	return updated, nil
 }

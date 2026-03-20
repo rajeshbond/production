@@ -26,6 +26,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/lib/pq"
@@ -238,12 +239,15 @@ func (s *Store) TenantVerification(ctx context.Context, tenantCode string) (bool
 	return true, nil
 }
 
-func (s *Store) GetTenantbyCode(ctx context.Context, tenantCode string) (*Tenant, error) {
+func (s *Store) GetTenantbyCode(ctx context.Context, tenantCode string) (*TenantResponse, error) {
 
 	query := `
 		SELECT id,
 		tenant_name,
 		tenant_code,
+		contact_person_name,
+		contact_phone,
+		contact_email,
 		address,
 		is_verified,
 		is_active,
@@ -256,12 +260,15 @@ func (s *Store) GetTenantbyCode(ctx context.Context, tenantCode string) (*Tenant
 		WHERE tenant_code = LOWER($1)
 	`
 
-	var t Tenant
+	var t TenantResponse
 
 	err := s.db.QueryRowContext(ctx, query, tenantCode).Scan(
 		&t.ID,
 		&t.TenantName,
 		&t.TenantCode,
+		&t.ContactPersonName,
+		&t.ContactPhone,
+		&t.ContactEmail,
 		&t.Address,
 		&t.IsVerified,
 		&t.IsActive,
@@ -371,4 +378,44 @@ func (s *Store) RecoveryTenant(ctx context.Context, tenantCode string, deletedBy
 
 // 10. Update the Tenant by Tenant code
 
-func(s *Store) UpdateTenant(ctx context.Context, tenantCode string, dto UpdateTenantDTO) (bool, error) {
+func (s *Store) UpdateTenant(ctx context.Context, t *Tenant) (bool, error) {
+
+	query := `
+		UPDATE tenant
+		SET tenant_name = $1,
+		    contact_person_name = $2,
+		    contact_phone = $3,
+		    contact_email = $4,
+		    address = $5,
+		    is_active = $6,
+		    updated_by = $7,
+		    updated_at = NOW()
+		WHERE tenant_code = $8
+		  AND is_deleted = false
+	`
+
+	result, err := s.db.ExecContext(ctx, query,
+		t.TenantName,
+		t.ContactPersonName,
+		t.ContactPhone,
+		t.ContactEmail,
+		t.Address,
+		t.IsActive,
+		t.UpdatedBy,
+		t.TenantCode,
+	)
+	if err != nil {
+		return false, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+
+	if rowsAffected == 0 {
+		return false, fmt.Errorf("%w: tenant_code=%s", ErrTenantNotUpdated, t.TenantCode)
+	}
+
+	return true, nil
+}

@@ -16,4 +16,7 @@ var (
 	ErrTenantAlreadyVerified = errors.New("tenant already verified")
 	ErrTenantNotDeleted      = errors.New("tenant not deleted")
 	ErrSameTenantCode        = errors.New("Same Tenant code exists")
+
+	ErrTenantNotUpdated    = errors.New("Tenant not updated")
+	ErrTenantDeletedInPast = errors.New("Tenant deleted in Past not Found")
 )

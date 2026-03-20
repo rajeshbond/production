@@ -8,4 +8,5 @@ const (
 	TenantDeleted        = "Tenant Not Present Deleted from Database"
 	TenantNotDeleted     = "Tenant Not Deleted"
 	TenantAlreadyDeleted = "Tenant Already Deleted"
+	TenantCodeRequired   = "Tenant Code Required"
 )

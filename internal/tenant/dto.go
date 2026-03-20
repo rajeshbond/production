@@ -28,17 +28,21 @@ type UpdateTenantRequest struct {
 }
 
 type TenantResponse struct {
-	ID         int64  `json:"id"`
-	TenantName string `json:"tenant_name"`
-	TenantCode string `json:"tenant_code"`
-	Address    string `json:"address"`
-	IsVerified bool   `json:"is_verified"`
-	IsActive   bool   `json:"is_active"`
-	CreatedBy  *int64 `json:"created_by"`
-	UpdatedBy  *int64 `json:"updated_by"`
+	ID                int64   `json:"id"`
+	TenantName        string  `json:"tenant_name"`
+	TenantCode        string  `json:"tenant_code"`
+	ContactPersonName *string `json:"contact_person_name,omitempty"`
+	ContactPhone      *string `json:"contact_phone,omitempty"`
+	ContactEmail      *string `json:"contact_email,omitempty"`
+	Address           *string `json:"address,omitempty"`
 
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	IsVerified bool      `json:"is_verified"`
+	IsActive   bool      `json:"is_active"`
+	CreatedBy  *int64    `json:"created_by"`
+	UpdatedBy  *int64    `json:"updated_by"`
+	IsDeleted  bool      `json:"is_deleted"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 type IsVerfiedRequest struct {
