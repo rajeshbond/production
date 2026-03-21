@@ -10,8 +10,7 @@ CREATE TABLE IF NOT EXISTS tenant (
 
 -- ✅ Contact person (primary)
 contact_person_name VARCHAR(150),
-/ / 10.
-Update the Tenant by Tenant code VARCHAR(20),
+contact_phone VARCHAR(20),
 contact_email VARCHAR(150),
 is_verified BOOLEAN NOT NULL DEFAULT FALSE,
 is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -68,6 +67,8 @@ WHERE
     is_deleted = false
     AND contact_email IS NOT NULL;
 
+-- Performance index
+CREATE INDEX IF NOT EXISTS idx_tenant_active ON tenant (is_deleted, is_active);
 -- Performance index
 CREATE INDEX IF NOT EXISTS idx_tenant_active ON tenant (is_deleted, is_active);
 

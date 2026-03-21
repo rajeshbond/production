@@ -59,6 +59,22 @@ type UserResponseDTO struct {
 	UpdatedAt  time.Time `db:"updated_at" json:"updated_at"`
 }
 
+type CreateUserResponse struct {
+	ID         int64   `json:"id"`
+	TenantID   int64   `json:"tenant_id"`
+	RoleID     int64   `json:"role_id"`
+	EmployeeID string  `json:"employee_id"`
+	UserName   string  `json:"user_name"`
+	Phone      *string `json:"phone"`
+	Email      *string `json:"email"`
+	IsVerified bool    `json:"is_verified"`
+	IsActive   bool    `json:"is_active"`
+	IsDeleted  *bool   `json:"is_deleted"`
+	DeletedBy  *int64  `json:"deleted_by"`
+	CreatedBy  int64   `json:"created_by"`
+	UpdatedBy  int64   `json:"updated_by"`
+}
+
 // Token Payload
 
 type UserPayload struct {
