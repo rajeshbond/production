@@ -7,7 +7,7 @@ type UserSuperRequest struct {
 	UserName   string  `json:"user_name"`
 	Phone      *string `json:"phone"`
 	Email      *string `json:"email"`
-	Password   string  `json:"password"`
+	Password   string  `json:"password"`5
 }
 
 type UserCreateRequest struct {
