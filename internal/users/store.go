@@ -1,5 +1,14 @@
 package users
 
+// Users Index
+//////////////////////////////////
+
+//
+
+// create tenant users
+
+//////////////////////////////////
+
 import (
 	"context"
 	"database/sql"
@@ -55,7 +64,7 @@ func (s *Store) CreateUser(ctx context.Context, dto UserCreateRequest) (*User, e
 		ctx,
 		query,
 		dto.TenantID,
-		dto.RoleId,
+		dto.RoleID,
 		dto.EmployeeID,
 		dto.UserName,
 		dto.Phone,
@@ -252,7 +261,7 @@ func (s *Store) CreateSuperAdminTx(ctx context.Context, tx *sql.Tx, dto UserCrea
 		ctx,
 		query,
 		dto.TenantID,
-		dto.RoleId,
+		dto.RoleID,
 		dto.EmployeeID,
 		dto.UserName,
 		dto.Phone,
@@ -277,37 +286,80 @@ func (s *Store) CreateSuperAdminTx(ctx context.Context, tx *sql.Tx, dto UserCrea
 	return id, nil
 }
 
-// func (s *Store) CreateSuperAdminTx(ctx context.Context, tx *sql.Tx, dto UserCreateRequest) (int64, error) {
+//  create Tenant Users
 
-// 	query := `
-// 		INSERT INTO "user" (tenant_id,role_id,employee_id,user_name,phone,email,password,created_by,updated_by)
-// 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$8)
-// 		RETURNING id
-// 	`
+func (s *Store) CreateTenantUser(ctx context.Context, dto *UserCreateRequest) (*CreateUserResponse, error) {
 
-// 	var id int64
-// 	err := tx.QueryRowContext(ctx, query,
-// 		dto.TenantID,
-// 		dto.RoleId,
-// 		dto.EmployeeID,
-// 		dto.UserName,
-// 		dto.Phone,
-// 		dto.Email,
-// 		dto.Password,
-// 		dto.CreatedBy,
-// 		dto.UpdatedBy,
-// 	).Scan(&id)
-// 	if err != nil {
+	query := `
+	INSERT INTO "user"
+	(tenant_id, role_id, employee_id, user_name, phone, email, password, created_by, updated_by)
+	VALUES
+	($1,$2,$3,$4,$5,$6,$7,$8,$9)
+	RETURNING 
+		id,
+		tenant_id,
+		role_id,
+		employee_id,
+		user_name,
+		phone,
+		email,
+		is_verified,
+		is_active,
+		is_deleted,
+		deleted_by,
+		created_by,
+		updated_by
+	`
 
-// 		// Handle duplicate key error
-// 		if pqErr, ok := err.(*pq.Error); ok {
-// 			if pqErr.Code == "23505" {
-// 				return 0, errors.New("User already exists")
-// 			}
-// 		}
+	var resp CreateUserResponse
 
-// 		return 0, err
-// 	}
+	// nullable fields
+	var phone sql.NullString
+	var email sql.NullString
+	var deletedBy sql.NullInt64
 
-// 	return id, nil
-// }
+	err := s.db.QueryRowContext(
+		ctx,
+		query,
+		dto.TenantID,
+		dto.RoleID,
+		dto.EmployeeID,
+		dto.UserName,
+		dto.Phone,
+		dto.Email,
+		dto.Password,
+		dto.CreatedBy,
+		dto.UpdatedBy,
+	).Scan(
+		&resp.ID,
+		&resp.TenantID,
+		&resp.RoleID,
+		&resp.EmployeeID,
+		&resp.UserName,
+		&phone,
+		&email,
+		&resp.IsVerified,
+		&resp.IsActive,
+		&resp.IsDeleted, // ✅ direct bool
+		&deletedBy,
+		&resp.CreatedBy,
+		&resp.UpdatedBy,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// ✅ Handle nullable fields
+	if phone.Valid {
+		resp.Phone = &phone.String
+	}
+	if email.Valid {
+		resp.Email = &email.String
+	}
+	if deletedBy.Valid {
+		resp.DeletedBy = &deletedBy.Int64
+	}
+
+	return &resp, nil
+}

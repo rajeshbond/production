@@ -3,9 +3,11 @@ package users
 import (
 	"context"
 	"database/sql"
+	"strings"
 
 	"github.com/rajesh_bond/production/cmd/service"
 	"github.com/rajesh_bond/production/internal/common/utils"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Service struct {
@@ -117,7 +119,7 @@ func (s *Service) CreateSuperUserTx(ctx context.Context, tx *sql.Tx, tenantID in
 	}
 	req := UserCreateRequest{
 		TenantID:   tenantID,
-		RoleId:     roleID,
+		RoleID:     roleID,
 		EmployeeID: dto.EmployeeID,
 		UserName:   dto.UserName,
 		Phone:      dto.Phone,
@@ -129,4 +131,29 @@ func (s *Service) CreateSuperUserTx(ctx context.Context, tx *sql.Tx, tenantID in
 
 	return s.Store.CreateSuperAdminTx(ctx, tx, req)
 
+}
+
+func (s *Service) CreateTenantUser(ctx context.Context, dto *UserCreateRequest) (*CreateUserResponse, error) {
+
+	dto.EmployeeID = strings.TrimSpace(dto.EmployeeID)
+	dto.UserName = strings.TrimSpace(dto.UserName)
+
+	if dto.EmployeeID == "" {
+		return nil, ErrEmployeeIDRequired
+	}
+	if dto.UserName == "" {
+		return nil, ErrUserNameRequired
+	}
+	if dto.Password == "" {
+		return nil, ErrPasswordRequired
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(dto.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+
+	dto.Password = string(hashedPassword)
+
+	return s.Store.CreateTenantUser(ctx, dto)
 }

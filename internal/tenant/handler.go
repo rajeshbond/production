@@ -179,6 +179,20 @@ func (h *Handler) UpdateTenant(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
+	claims, ok := auth.GetUserClaimsFromContext(ctx)
+	if !ok {
+		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
+		return
+	}
+
+	// user id from token
+	role := claims.Role
+
+	if !auth.IsSuper(role) {
+		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
+		return
+	}
+
 	// 1. Get tenant_code from URL param
 	tenantCode := chi.URLParam(r, "tenant_code")
 	if tenantCode == "" {

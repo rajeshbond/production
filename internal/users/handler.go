@@ -93,7 +93,7 @@ func (h *Handler) Test1(w http.ResponseWriter, r *http.Request) {
 
 	// jsonData, err := json.Marshal(resp)
 	// if err != nil {
-	// 	log.Println("JSON marshal error:", err) 
+	// 	log.Println("JSON marshal error:", err)
 	// 	return
 	// }
 
@@ -102,4 +102,22 @@ func (h *Handler) Test1(w http.ResponseWriter, r *http.Request) {
 	// log.Println(resp)
 	response.JSON(w, http.StatusOK, resp)
 	// response.JSON(w, http.StatusOK, string(jsonData))
+}
+
+func (h *Handler) CreateTenantUser(w http.ResponseWriter, r *http.Request) {
+
+	var req UserCreateRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	resp, err := h.service.CreateTenantUser(r.Context(), &req)
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	response.JSON(w, http.StatusOK, resp)
 }

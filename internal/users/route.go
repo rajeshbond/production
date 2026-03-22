@@ -26,6 +26,7 @@ func (m *Module) Router() chi.Router {
 		r.Use(auth.UserContextInjector)
 
 		r.Get("/test", m.handler.Test1)
+		r.Post("/ctenatuser", m.handler.CreateTenantUser)
 
 	})
 	return r

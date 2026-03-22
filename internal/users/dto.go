@@ -7,21 +7,19 @@ type UserSuperRequest struct {
 	UserName   string  `json:"user_name"`
 	Phone      *string `json:"phone"`
 	Email      *string `json:"email"`
-	Password   string  `json:"password"`5
+	Password   string  `json:"password"`
 }
 
 type UserCreateRequest struct {
 	TenantID   int64   `json:"tenant_id" validate:"required"`
-	RoleId     int64   `json:"role_id" validate:"required"`
+	RoleID     int64   `json:"role_id" validate:"required"`
 	EmployeeID string  `json:"employee_id" validate:"required"`
 	UserName   string  `json:"user_name" validate:"required"`
-	Phone      *string `json:"phone" validate:"required"`
+	Phone      *string `json:"phone"`
 	Email      *string `json:"email"`
 	Password   string  `json:"password" validate:"required,min=6"`
-	// IsVerified *bool  `json:"is_verified,omitempty"`
-	// IsActive   *bool  `json:"is_active,omitempty"`
-	CreatedBy *int64 `json:"created_by,omitempty"`
-	UpdatedBy *int64 `json:"updated_by,omitempty"`
+	CreatedBy  *int64  `json:"created_by,omitempty"`
+	UpdatedBy  *int64  `json:"updated_by,omitempty"`
 }
 
 // Response DTO
@@ -69,7 +67,7 @@ type CreateUserResponse struct {
 	Email      *string `json:"email"`
 	IsVerified bool    `json:"is_verified"`
 	IsActive   bool    `json:"is_active"`
-	IsDeleted  *bool   `json:"is_deleted"`
+	IsDeleted  bool    `json:"is_deleted"`
 	DeletedBy  *int64  `json:"deleted_by"`
 	CreatedBy  int64   `json:"created_by"`
 	UpdatedBy  int64   `json:"updated_by"`
