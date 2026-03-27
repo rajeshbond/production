@@ -61,7 +61,7 @@ func NewRouter(app *App) http.Handler {
 	r.Mount("/tenant", tenantModule.Router())
 
 	// Users
-	usersModule := users.NewModule(app.DB, tokenAuth, userRoleModule.Service)
+	usersModule := users.NewModule(app.DB, tokenAuth, userRoleModule.Service, tenantModule.Service)
 	r.Mount("/users", usersModule.Router())
 
 	return r

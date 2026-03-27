@@ -15,8 +15,8 @@ func (m *Module) Router() chi.Router {
 	})
 
 	// Public routes
-	r.Post("/createuser", m.handler.CreateUser)
-	r.Post("/loginuser", m.handler.LoginUser)
+	r.Post("/createuser", m.Handler.CreateUser)
+	r.Post("/loginuser", m.Handler.LoginUser)
 
 	// Private routes
 
@@ -25,8 +25,10 @@ func (m *Module) Router() chi.Router {
 		r.Use(auth.Authenticator(m.tokenAuth))
 		r.Use(auth.UserContextInjector)
 
-		r.Get("/test", m.handler.Test1)
-		r.Post("/ctenatuser", m.handler.CreateTenantUser)
+		r.Get("/test", m.Handler.Test1)
+		r.Post("/ctenatuser", m.Handler.CreateTenantUser)
+		r.Patch("/verifyuser", m.Handler.VerifyTenantUser)
+		r.Delete("/deleteuser/{tenant_id}/user/{employee_id}", m.Handler.DeleteTenantUser)
 
 	})
 	return r

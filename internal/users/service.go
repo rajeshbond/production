@@ -3,22 +3,26 @@ package users
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/rajesh_bond/production/cmd/service"
+	"github.com/rajesh_bond/production/internal/auth"
 	"github.com/rajesh_bond/production/internal/common/utils"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type Service struct {
-	Store       *Store
-	RoleProvide RoleProvide
+	Store          *Store
+	RoleProvide    RoleProvide
+	TenantProvider TenantProvider
 }
 
-func NewService(store *Store, roleProvider RoleProvide) *Service {
+func NewService(store *Store, roleProvider RoleProvide, tenantProvider TenantProvider) *Service {
 	return &Service{
-		Store:       store,
-		RoleProvide: roleProvider,
+		Store:          store,
+		RoleProvide:    roleProvider,
+		TenantProvider: tenantProvider,
 	}
 }
 
@@ -66,6 +70,37 @@ func (ser *Service) LoginUser(ctx context.Context, req LoginRequest) (*LoginResp
 		return nil, err
 	}
 
+	tcode, err := auth.Tcode(req.EmployeeID)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("Tenant Code:-", tcode)
+
+	tenantID, err := ser.TenantProvider.GetTenantIDByCode(ctx, tcode)
+	if err != nil {
+		return nil, err
+	}
+
+	// tenantID, err := ser.Store.GetTenantIDByCode(ctx, tcode)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// ✅ Check status
+	found, isVerified, err := ser.Store.GetVerificationStatus(ctx, req.EmployeeID, tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !found {
+		return nil, errors.New("user not found")
+	}
+
+	if isVerified {
+		return nil, errors.New("user already verified")
+	}
+
 	// fetch user data + password
 	tokenPayload, hashedPassword, err := ser.Store.GetPasswordHashbyEmplopeeID(ctx, req.EmployeeID)
 	if err != nil {
@@ -81,16 +116,6 @@ func (ser *Service) LoginUser(ctx context.Context, req LoginRequest) (*LoginResp
 	if err != nil {
 		return nil, err
 	}
-
-	// role, err := ser.RoleProvide.GetRoleNameByID(ctx, tokenPayload.RoleID)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// role, err := ser.RoleProvide.GetRoleNameByID(ctx, tokenPayload.RoleID)
-	// if err != nil {
-	// 	return nil, err
-	// }
 
 	// prepare jwt payload
 	payload := service.TokenPayload{
@@ -133,27 +158,164 @@ func (s *Service) CreateSuperUserTx(ctx context.Context, tx *sql.Tx, tenantID in
 
 }
 
-func (s *Service) CreateTenantUser(ctx context.Context, dto *UserCreateRequest) (*CreateUserResponse, error) {
+func (s *Service) CreateTenantUser(ctx context.Context, claims *auth.UserClaims, req *UserCreateRequest) (*CreateUserResponse, error) {
 
-	dto.EmployeeID = strings.TrimSpace(dto.EmployeeID)
-	dto.UserName = strings.TrimSpace(dto.UserName)
-
-	if dto.EmployeeID == "" {
-		return nil, ErrEmployeeIDRequired
-	}
-	if dto.UserName == "" {
-		return nil, ErrUserNameRequired
-	}
-	if dto.Password == "" {
-		return nil, ErrPasswordRequired
+	// Basic validation
+	if strings.TrimSpace(req.EmployeeID) == "" {
+		return nil, ErrEmployeeIDReqyured
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(dto.Password), bcrypt.DefaultCost)
+	// Authorization
+
+	if err := auth.ValidateTenantAccess(
+		claims.Role,
+		claims.EmployeeID,
+		req.EmployeeID,
+	); err != nil {
+		return nil, err
+	}
+
+	// Duplicate check
+
+	exists, err := s.Store.IsEmployeeExist(ctx, req.EmployeeID, req.TenantID)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, ErrUserAlreadyExistForThisTenant
+	}
+
+	// Create user
+
+	hashedPassword, err := utils.HashPassword(req.Password)
+	if err != nil {
+		return nil, err
+	}
+	req.Password = hashedPassword
+
+	user, err := s.Store.CreateTenantUser(ctx, req)
+
 	if err != nil {
 		return nil, err
 	}
 
-	dto.Password = string(hashedPassword)
+	return user, nil
 
-	return s.Store.CreateTenantUser(ctx, dto)
+}
+
+func (s *Service) CheckEmployeeExist(ctx context.Context, employeeID string, tenantID int64) error {
+	// Basic Validation
+	if strings.TrimSpace(employeeID) == "" {
+		return ErrEmployeeIDRequired
+	}
+
+	// call Store
+
+	exists, err := s.Store.IsEmployeeExist(ctx, employeeID, tenantID)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return ErrUserAlreadyExists
+	}
+
+	return nil
+
+}
+
+func (ser *Service) CheckTenantExist(ctx context.Context, tenantCode string) error {
+	exists, err := ser.Store.IsTenantExist(ctx, tenantCode)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		return ErrAlreadyTenantPresent
+	}
+
+	return nil
+
+}
+
+func (s *Service) VerifyTenantUser(ctx context.Context, claims *auth.UserClaims, employeeID string, tenantID int64) error {
+
+	// ✅ Auth check
+	if err := auth.ValidateTenantAccess(
+		claims.Role,
+		claims.EmployeeID,
+		employeeID,
+	); err != nil {
+		return err
+	}
+
+	// ✅ Check status
+	found, isVerified, err := s.Store.GetVerificationStatus(ctx, employeeID, tenantID)
+	if err != nil {
+		return err
+	}
+
+	if !found {
+		return errors.New("user not found")
+	}
+
+	if isVerified {
+		return errors.New("user already verified")
+	}
+
+	// ✅ Update
+	updated, err := s.Store.GetVerifyTenantUser(ctx, employeeID, tenantID)
+	if err != nil {
+		return err
+	}
+
+	if !updated {
+		return errors.New("verification failed")
+	}
+
+	return nil
+}
+
+func (ser *Service) DeleteTenantUser(ctx context.Context,claims *auth.UserClaims,employeeID string,tenantID int64,
+) error {
+
+	// ✅ Basic validation
+	if employeeID == "" {
+		return errors.New("employee_id is required")
+	}
+
+	if tenantID == 0 {
+		return errors.New("tenant_id is required")
+	}
+
+	// ✅ Auth check (who can delete whom)
+	if err := auth.ValidateTenantAccess(claims.Role, claims.EmployeeID, employeeID); err != nil {
+		return err
+	}
+
+	// ✅ Fetch user
+	cUser, err := ser.Store.GetUserbyEmploeeID(ctx, employeeID, tenantID)
+	if err != nil {
+		return err
+	}
+
+	if cUser == nil {
+		return errors.New("user not found")
+	}
+
+	// ✅ Already deleted check
+	if cUser.IsDeleted {
+		return errors.New("user already deleted")
+	}
+
+	// ✅ Soft delete
+	deleted, err := ser.Store.DeleteTenantUser(ctx, employeeID, tenantID, claims.UserID)
+	if err != nil {
+		return err
+	}
+
+	if !deleted {
+		return errors.New("failed to delete user")
+	}
+
+	return nil
 }

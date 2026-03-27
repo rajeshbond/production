@@ -110,6 +110,7 @@ SELECT
     email,
     is_verified,
     is_active,
+		is_deleted,
     created_by,
     updated_by,
     created_at,
@@ -130,6 +131,7 @@ WHERE id = $1
 		&user.Email,
 		&user.IsVerified,
 		&user.IsActive,
+		&user.IsDeleted,
 		&user.CreatedBy,
 		&user.UpdatedBy,
 		&user.CreatedAt,
@@ -153,7 +155,7 @@ WHERE id = $1
 func (s *Store) GetUsersByTenantID(ctx context.Context, tenantID int64) ([]User, error) {
 
 	query := `
-SELECT
+		SELECT
     id,
     tenant_id,
     role_id,
@@ -362,4 +364,199 @@ func (s *Store) CreateTenantUser(ctx context.Context, dto *UserCreateRequest) (*
 	}
 
 	return &resp, nil
+}
+
+func (s *Store) IsEmployeeExist(ctx context.Context, employeeID string, tenantID int64) (bool, error) {
+
+	query := `
+		SELECT EXISTS(
+		SELECT 1
+		FROM "user"
+		WHERE employee_id = $1
+		AND tenant_id = $2
+		AND is_deleted = false
+		)`
+	var exists bool
+
+	err := s.db.QueryRowContext(ctx, query, employeeID, tenantID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+
+}
+
+func (s *Store) IsTenantExist(ctx context.Context, tennatCode string) (bool, error) {
+	query := `
+		SELECT EXISITS(
+		SELECT 1,
+		FROM tenant,
+		WHERE tenant_code = $1
+		AND is_deleted = false
+	)`
+
+	var exists bool
+
+	err := s.db.QueryRowContext(ctx, query, tennatCode).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+
+}
+
+func (s *Store) GetVerifyTenantUser(ctx context.Context, employeeID string, tenantID int64) (bool, error) {
+
+	query := `
+	UPDATE "user"
+	SET is_verified = true 
+	WHERE employee_id = $1
+	AND tenant_id = $2
+	AND is_deleted = false
+	`
+
+	result, err := s.db.ExecContext(ctx, query, employeeID, tenantID)
+	if err != nil {
+		return false, err
+	}
+
+	resultRowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return false, nil
+	}
+
+	// If no rows updated -> not found or already deleetd
+
+	if resultRowsAffected == 0 {
+		return false, err
+	}
+
+	return true, nil
+
+}
+
+func (s *Store) GetVerificationStatus(
+	ctx context.Context,
+	employeeID string,
+	tenantID int64,
+) (bool, bool, error) {
+
+	query := `
+		SELECT is_verified
+		FROM "user"
+		WHERE employee_id = $1
+		  AND tenant_id = $2
+		  AND is_deleted = false
+	`
+
+	var isVerified bool
+
+	err := s.db.QueryRowContext(ctx, query, employeeID, tenantID).Scan(&isVerified)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, false, nil // not found
+		}
+		return false, false, err
+	}
+
+	return true, isVerified, nil
+}
+
+func (s *Store) GetTenantIDByCode(ctx context.Context, tenantName string) (int64, error) {
+	query := `
+		SELECT id
+		FROM tenant
+		WHERE LOWER(tenant_code) = LOWER($1)
+	`
+
+	var tenantID int64
+
+	err := s.db.QueryRowContext(ctx, query, tenantName).Scan(&tenantID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, errors.New("Tenant Not Found")
+		}
+
+		return 0, err
+	}
+
+	return tenantID, nil
+}
+
+func (s *Store) DeleteTenantUser(ctx context.Context, employeeID string, tenantID int64, userID int64) (bool, error) {
+	query := `
+	UPDATE "user"
+	SET is_deleted = TRUE,
+		deleted_at = NOW(),
+		deleted_by = $3,
+		updated_by = $3,
+		updated_at = NOW()
+	WHERE employee_id = $1
+	  AND tenant_id = $2
+	  AND is_deleted = false
+	`
+
+	result, err := s.db.ExecContext(ctx, query, employeeID, tenantID, userID)
+	if err != nil {
+		return false, err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+
+	if rows == 0 {
+		return false, errors.New("user not found or already deleted")
+	}
+
+	return true, nil
+}
+func (s *Store) GetUserbyEmploeeID(ctx context.Context, employeeID string, tenantID int64) (*CreateUserResponse, error) {
+
+	query := `
+		SELECT id,
+			employee_id,
+			tenant_id,
+			user_name,
+			email,
+			phone,
+			is_verified,
+			is_active,
+			is_deleted,
+			created_by,
+			updated_by
+		FROM "user"
+		WHERE employee_id = $1
+		AND tenant_id = $2
+		AND is_deleted = false
+	`
+
+	var resp CreateUserResponse
+
+	err := s.db.QueryRowContext(ctx, query, employeeID, tenantID).Scan(
+		&resp.ID,
+		&resp.EmployeeID,
+		&resp.TenantID,
+		&resp.UserName,
+		&resp.Email,
+		&resp.Phone,
+		&resp.IsVerified,
+		&resp.IsActive,
+		&resp.IsDeleted,
+		&resp.CreatedBy,
+		&resp.UpdatedBy,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.New("user not found")
+		}
+		return nil, err
+	}
+
+	return &resp, nil
+
 }

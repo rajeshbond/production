@@ -91,3 +91,8 @@ type LoginResponse struct {
 	// UserID int64  `json:"user_id"`
 	Token string `json:"token"`
 }
+
+type VerifyTenantRequest struct {
+	EmployeeID string `json:"employee_id"`
+	TenantID   int64  `json:"tenant_id"`
+}

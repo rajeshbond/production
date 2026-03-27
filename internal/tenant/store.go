@@ -82,11 +82,11 @@ func (s *Store) Create(ctx context.Context, dto CreateTenantDTO) (*Tenant, error
 
 // 2. Get Tenant ID by Name
 
-func (s *Store) GetTenantIDByName(ctx context.Context, tenantName string) (int64, error) {
+func (s *Store) GetTenantIDByCode(ctx context.Context, tenantName string) (int64, error) {
 	query := `
 		SELECT id
 		FROM tenant
-		WHERE LOWER(tenant_name) = LOWER($1)
+		WHERE LOWER(tenant_code) = LOWER($1)
 	`
 
 	var tenantID int64
@@ -132,26 +132,26 @@ func (s *Store) GetTenantNameByID(ctx context.Context, tenantID int64) (string, 
 }
 
 // 4. Get Tenant Code by ID
-func (s *Store) GetTenantCodeByID(ctx context.Context, tenantID int64) (string, error) {
+// func (s *Store) GetTenantCodeByID(ctx context.Context, tenantID int64) (string, error) {
 
-	query := `
-		SELECT tenant_code
-		FROM tenant
-		WHERE id = $1
-	`
+// 	query := `
+// 		SELECT tenant_code
+// 		FROM tenant
+// 		WHERE id = $1
+// 	`
 
-	var tenantCode string
+// 	var tenantCode string
 
-	err := s.db.QueryRowContext(ctx, query, tenantID).Scan(&tenantCode)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return "", errors.New("tenant not found")
-		}
-		return "", err
-	}
+// 	err := s.db.QueryRowContext(ctx, query, tenantID).Scan(&tenantCode)
+// 	if err != nil {
+// 		if err == sql.ErrNoRows {
+// 			return "", errors.New("tenant not found")
+// 		}
+// 		return "", err
+// 	}
 
-	return tenantCode, nil
-}
+// 	return tenantCode, nil
+// }
 
 // 5. Create super Tenant Tx - Development
 

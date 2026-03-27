@@ -4,20 +4,22 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/rajesh_bond/production/internal/auth"
 	"github.com/rajesh_bond/production/internal/common/response"
 )
 
 type Handler struct {
-	service   *Service
+	Service   *Service
 	tokenAuth *jwtauth.JWTAuth
 }
 
 func NewHandler(service *Service, tokenAuth *jwtauth.JWTAuth) *Handler {
 	return &Handler{
-		service:   service,
+		Service:   service,
 		tokenAuth: tokenAuth,
 	}
 }
@@ -33,7 +35,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	user, err := h.service.CreateUser(ctx, req)
+	user, err := h.Service.CreateUser(ctx, req)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -58,10 +60,11 @@ func (h *Handler) LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	resp, err := h.service.LoginUser(ctx, req)
+	resp, err := h.Service.LoginUser(ctx, req)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	response.JSON(w, http.StatusOK, resp)
@@ -105,19 +108,143 @@ func (h *Handler) Test1(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateTenantUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	defer r.Body.Close()
 
-	var req UserCreateRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		response.JSON(w, http.StatusBadRequest, "invalid request body")
+	// Extrating claims (Only Here)
+	claims, ok := auth.GetUserClaimsFromContext(ctx)
+	if !ok {
+		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
 		return
 	}
 
-	resp, err := h.service.CreateTenantUser(r.Context(), &req)
+	// Parse Request
+	var req UserCreateRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, http.StatusBadRequest, response.InvalidRequestBody)
+		return
+	}
+
+	// Call Service
+
+	resp, err := h.Service.CreateTenantUser(ctx, claims, &req)
 	if err != nil {
 		response.JSON(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	response.JSON(w, http.StatusOK, resp)
+	response.JSON(w, http.StatusCreated, resp)
+
+}
+
+func (h *Handler) VerifyTenantUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	defer r.Body.Close()
+
+	// Extraxt claims
+
+	claims, ok := auth.GetUserClaimsFromContext(ctx)
+	if !ok {
+		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
+		return
+	}
+
+	// Pasrse request
+	var req VerifyTenantRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, http.StatusBadRequest, response.ErrInvalidRequest)
+		return
+	}
+
+	// call service
+
+	err := h.Service.VerifyTenantUser(ctx, claims, req.EmployeeID, req.TenantID)
+
+	// Better error handleing (optional but recommended)
+	if err != nil {
+
+		// 🔥 Better error handling (optional but recommended)
+		switch err.Error() {
+		case "user not found":
+			response.JSON(w, http.StatusNotFound, err.Error())
+		case "user already verified":
+			response.JSON(w, http.StatusConflict, err.Error())
+		default:
+			response.JSON(w, http.StatusBadRequest, err.Error())
+		}
+
+		return
+	}
+
+	response.JSON(w, http.StatusOK, "user verified sucessfully ")
+
+}
+
+func (h *Handler) DeleteTenantUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Get params from URL
+
+	employeeID := chi.URLParam(r, "employee_id")
+	tenantIDStr := chi.URLParam(r, "tenant_id")
+
+	// Validate tenant_id
+
+	tenantID, err := strconv.ParseInt(tenantIDStr, 10, 64)
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, map[string]interface{}{
+			"error": "invalid tenant id",
+		})
+		return
+	}
+
+	// Get claims from conetxt
+
+	claims, ok := auth.GetUserClaimsFromContext(ctx)
+	if !ok {
+		response.JSON(w, http.StatusUnauthorized, map[string]interface{}{
+			"error": "invalid tenant_id",
+		})
+		return
+	}
+
+	// call service
+
+	err = h.Service.DeleteTenantUser(ctx, claims, employeeID, tenantID)
+
+	if err != nil {
+
+		switch err.Error() {
+		case "employee_id is required", "tenant_id is required":
+			response.JSON(w, http.StatusBadRequest, map[string]interface{}{
+				"error": err.Error(),
+			})
+		case "user not found":
+			response.JSON(w, http.StatusNotFound, map[string]interface{}{
+				"error": err.Error(),
+			})
+
+		case "user already deleted":
+			response.JSON(w, http.StatusConflict, map[string]interface{}{
+				"error": err.Error(),
+			})
+
+		default:
+			response.JSON(w, http.StatusInternalServerError, map[string]interface{}{
+				"error": err.Error(),
+			})
+
+		}
+
+		return
+
+	}
+
+	// ✅ Success
+	response.JSON(w, http.StatusOK, map[string]interface{}{
+		"message": "user deleted successfully",
+	})
+
 }

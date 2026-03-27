@@ -278,3 +278,7 @@ func (ser *Service) UpdateTenant(ctx context.Context, tenantCode string, dto Upd
 
 	return updated, nil
 }
+
+func (s *Service) GetTenantIDByCode(ctx context.Context, tenantCode string) (int64, error) {
+	return s.store.GetTenantIDByCode(ctx, tenantCode)
+}

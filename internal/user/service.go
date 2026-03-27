@@ -29,7 +29,7 @@ func (s *Service) CreateUser(ctx context.Context, req CreateUserRequest) (*UserR
 		return nil, err
 	}
 
-	tenantID, err := s.tenantStore.GetTenantIDByName(ctx, req.TenantName)
+	tenantID, err := s.tenantStore.GetTenantIDByCode(ctx, req.TenantName)
 	if err != nil {
 		return nil, err
 	}
