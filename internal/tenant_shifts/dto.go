@@ -3,8 +3,8 @@ package tenantshifts
 import "time"
 
 type CreateTenantShiftRequest struct {
-	TenantID  int64  `json:"tenant_id"`
-	ShiftName string `json:"shift_name"`
+	TenantID  int64  `json:"tenant_id" validation:"required"`
+	ShiftName string `json:"shift_name" validation:"required"`
 	CreatedBy *int64 `json:"created_by"`
 }
 
