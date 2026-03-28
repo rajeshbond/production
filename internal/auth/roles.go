@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -50,4 +51,30 @@ func Tcode(id string) (string, error) {
 	}
 
 	return strings.ToLower(strings.TrimSpace(parts[1])), nil
+}
+
+// Function Validate Tenant ID with Tenant code
+
+func ValidateTenantAccesswithTenantCode(role string, claimsTenantID, reqTenantID int64) error {
+
+	fmt.Println("Rajesh Bondgilwar inside switch case")
+	switch role {
+
+	case RoleSuperAdmin, RoleAdmin:
+		// Full Access
+		return nil
+
+	case RoleTenantAdmin:
+		// Restricted to own tenant
+		if claimsTenantID != reqTenantID {
+			fmt.Println("Rajesh failed ")
+			return ErrTenantMismatch
+		}
+
+		fmt.Println("Rajesh Passed ")
+		return nil // ✅ IMPORTANT FIX
+
+	default:
+		return ErrUnauthorized
+	}
 }

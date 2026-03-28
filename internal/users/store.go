@@ -1,14 +1,25 @@
 package users
 
+/*
 // Users Index
 //////////////////////////////////
-
-//
-
-// create tenant users
+// 1.Create User
+//2. Get User detaiils by ID
+//3. Get All Users by Tenant
+//4. Get HashPassword by Employee ID
+//5. Create Super Admin
+//6.create Tenant Users
+//7. Is Employee Exist
+//8. Is Tenant Exist
+//9. Get Verify Tenant User
+//10. Get Verification Status
+//11. Get Tenant ID by Code
+// //12. Delete Tenant User
 
 //////////////////////////////////
+*/
 
+// imports
 import (
 	"context"
 	"database/sql"
@@ -18,15 +29,17 @@ import (
 	"github.com/rajesh_bond/production/internal/common/response"
 )
 
+// Store Stuct
 type Store struct {
 	db *sql.DB
 }
 
+// Store constructor
 func NewStore(db *sql.DB) *Store {
 	return &Store{db: db}
 }
 
-// Create User
+// 1.Create User
 
 func (s *Store) CreateUser(ctx context.Context, dto UserCreateRequest) (*User, error) {
 
@@ -95,7 +108,7 @@ func (s *Store) CreateUser(ctx context.Context, dto UserCreateRequest) (*User, e
 	return &user, nil
 }
 
-// Get User detaiils by ID
+//2. Get User detaiils by ID
 
 func (s *Store) GetUserDetailByID(ctx context.Context, userID int64) (*User, error) {
 
@@ -150,7 +163,7 @@ WHERE id = $1
 	return &user, nil
 }
 
-// Get All Users by Tenant
+//3. Get All Users by Tenant
 
 func (s *Store) GetUsersByTenantID(ctx context.Context, tenantID int64) ([]User, error) {
 
@@ -215,8 +228,7 @@ ORDER BY id
 	return users, nil
 }
 
-// Get HashPassword by Employee ID
-
+// 4. Get HashPassword by Employee ID
 func (s *Store) GetPasswordHashbyEmplopeeID(ctx context.Context, employeeID string) (*UserPayload, string, error) {
 	var passwordHash string
 
@@ -248,6 +260,7 @@ func (s *Store) GetPasswordHashbyEmplopeeID(ctx context.Context, employeeID stri
 	return payload, passwordHash, nil
 }
 
+// 5. Create Super Admin
 func (s *Store) CreateSuperAdminTx(ctx context.Context, tx *sql.Tx, dto UserCreateRequest) (int64, error) {
 
 	query := `
@@ -288,8 +301,7 @@ func (s *Store) CreateSuperAdminTx(ctx context.Context, tx *sql.Tx, dto UserCrea
 	return id, nil
 }
 
-//  create Tenant Users
-
+// 6.create Tenant Users
 func (s *Store) CreateTenantUser(ctx context.Context, dto *UserCreateRequest) (*CreateUserResponse, error) {
 
 	query := `
@@ -366,6 +378,7 @@ func (s *Store) CreateTenantUser(ctx context.Context, dto *UserCreateRequest) (*
 	return &resp, nil
 }
 
+// 7. Is Employee Exist
 func (s *Store) IsEmployeeExist(ctx context.Context, employeeID string, tenantID int64) (bool, error) {
 
 	query := `
@@ -387,6 +400,7 @@ func (s *Store) IsEmployeeExist(ctx context.Context, employeeID string, tenantID
 
 }
 
+// 8. Is Tenant Exist
 func (s *Store) IsTenantExist(ctx context.Context, tennatCode string) (bool, error) {
 	query := `
 		SELECT EXISITS(
@@ -407,6 +421,7 @@ func (s *Store) IsTenantExist(ctx context.Context, tennatCode string) (bool, err
 
 }
 
+// 9. Get Verify Tenant User
 func (s *Store) GetVerifyTenantUser(ctx context.Context, employeeID string, tenantID int64) (bool, error) {
 
 	query := `
@@ -437,11 +452,8 @@ func (s *Store) GetVerifyTenantUser(ctx context.Context, employeeID string, tena
 
 }
 
-func (s *Store) GetVerificationStatus(
-	ctx context.Context,
-	employeeID string,
-	tenantID int64,
-) (bool, bool, error) {
+// 10. Get Verification Status
+func (s *Store) GetVerificationStatus(ctx context.Context, employeeID string, tenantID int64) (bool, bool, error) {
 
 	query := `
 		SELECT is_verified
@@ -464,6 +476,7 @@ func (s *Store) GetVerificationStatus(
 	return true, isVerified, nil
 }
 
+// 11. Get Tenant ID by Code
 func (s *Store) GetTenantIDByCode(ctx context.Context, tenantName string) (int64, error) {
 	query := `
 		SELECT id
@@ -485,6 +498,7 @@ func (s *Store) GetTenantIDByCode(ctx context.Context, tenantName string) (int64
 	return tenantID, nil
 }
 
+// 12. Delete Tenant User
 func (s *Store) DeleteTenantUser(ctx context.Context, employeeID string, tenantID int64, userID int64) (bool, error) {
 	query := `
 	UPDATE "user"

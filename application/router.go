@@ -12,6 +12,7 @@ import (
 	"github.com/rajesh_bond/production/cmd/service"
 	internalsetup "github.com/rajesh_bond/production/internal/internal_setup"
 	tenant "github.com/rajesh_bond/production/internal/tenant"
+	tenantshifts "github.com/rajesh_bond/production/internal/tenant_shifts"
 	userrole "github.com/rajesh_bond/production/internal/user_role"
 	users "github.com/rajesh_bond/production/internal/users"
 
@@ -59,6 +60,10 @@ func NewRouter(app *App) http.Handler {
 	// Tenant
 	tenantModule := tenant.NewModule(app.DB)
 	r.Mount("/tenant", tenantModule.Router())
+
+	// Tenant shift
+	tenantShiftMoulde := tenantshifts.NewModule(app.DB, tokenAuth)
+	r.Mount("/tenantshift", tenantShiftMoulde.Router())
 
 	// Users
 	usersModule := users.NewModule(app.DB, tokenAuth, userRoleModule.Service, tenantModule.Service)

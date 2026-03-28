@@ -3,6 +3,7 @@ package tenantshifts
 import (
 	"context"
 	"database/sql"
+	"fmt"
 )
 
 type Store struct {
@@ -14,7 +15,7 @@ func NewStore(db *sql.DB) *Store {
 }
 
 func (s *Store) CreateTenantShift(ctx context.Context, req *CreateTenantShiftRequest) (*TenantShift, error) {
-
+	fmt.Println("Rajesh Bondgilwar")
 	// Create tenant shift
 	query := `
 	INSERT INTO tenant_shift (
@@ -47,6 +48,7 @@ func (s *Store) CreateTenantShift(ctx context.Context, req *CreateTenantShiftReq
 	)
 
 	if err != nil {
+		fmt.Printf("Error creating tenant shift: %v\n", err)
 		return nil, err
 	}
 

@@ -1,5 +1,23 @@
 package users
 
+/*
+///////////////////////////////////////
+// Index - Service Layer
+///////////////////////////////////////
+// 1. Create User
+// 2. Login
+// 3. Create Super User
+// 4. Create Tenant User
+// 5. Check Employee
+// 6. Check Tenant
+// 7. Verify Tenant User
+// 8. Delete Tenant User
+
+
+
+
+///////////////////////////////////////
+*/
 import (
 	"context"
 	"database/sql"
@@ -26,6 +44,7 @@ func NewService(store *Store, roleProvider RoleProvide, tenantProvider TenantPro
 	}
 }
 
+// 1. Create User
 func (ser *Service) CreateUser(ctx context.Context, req UserCreateRequest) (*UserResponse, error) {
 
 	hashedPassword, err := utils.HashPassword(req.Password)
@@ -63,6 +82,7 @@ func (ser *Service) CreateUser(ctx context.Context, req UserCreateRequest) (*Use
 
 }
 
+// 2. Login
 func (ser *Service) LoginUser(ctx context.Context, req LoginRequest) (*LoginResponse, error) {
 
 	// validate request
@@ -136,6 +156,7 @@ func (ser *Service) LoginUser(ctx context.Context, req LoginRequest) (*LoginResp
 		Token: tokenString}, nil
 }
 
+// 3. Create Super User
 func (s *Service) CreateSuperUserTx(ctx context.Context, tx *sql.Tx, tenantID int64, roleID int64, dto UserSuperRequest) (int64, error) {
 	createdBy := int64(1)
 	hasshedPassword, err := utils.HashPassword(dto.Password)
@@ -158,6 +179,7 @@ func (s *Service) CreateSuperUserTx(ctx context.Context, tx *sql.Tx, tenantID in
 
 }
 
+// 4. Create Tenant User
 func (s *Service) CreateTenantUser(ctx context.Context, claims *auth.UserClaims, req *UserCreateRequest) (*CreateUserResponse, error) {
 
 	// Basic validation
@@ -203,6 +225,7 @@ func (s *Service) CreateTenantUser(ctx context.Context, claims *auth.UserClaims,
 
 }
 
+// 5. Check Employee
 func (s *Service) CheckEmployeeExist(ctx context.Context, employeeID string, tenantID int64) error {
 	// Basic Validation
 	if strings.TrimSpace(employeeID) == "" {
@@ -223,6 +246,7 @@ func (s *Service) CheckEmployeeExist(ctx context.Context, employeeID string, ten
 
 }
 
+// 6. Check Tenant
 func (ser *Service) CheckTenantExist(ctx context.Context, tenantCode string) error {
 	exists, err := ser.Store.IsTenantExist(ctx, tenantCode)
 	if err != nil {
@@ -237,6 +261,7 @@ func (ser *Service) CheckTenantExist(ctx context.Context, tenantCode string) err
 
 }
 
+// 7. Verify Tenant User
 func (s *Service) VerifyTenantUser(ctx context.Context, claims *auth.UserClaims, employeeID string, tenantID int64) error {
 
 	// ✅ Auth check
@@ -275,8 +300,8 @@ func (s *Service) VerifyTenantUser(ctx context.Context, claims *auth.UserClaims,
 	return nil
 }
 
-func (ser *Service) DeleteTenantUser(ctx context.Context,claims *auth.UserClaims,employeeID string,tenantID int64,
-) error {
+// 8. Delete Tenant User
+func (ser *Service) DeleteTenantUser(ctx context.Context, claims *auth.UserClaims, employeeID string, tenantID int64) error {
 
 	// ✅ Basic validation
 	if employeeID == "" {
