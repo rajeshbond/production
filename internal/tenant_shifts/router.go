@@ -15,7 +15,7 @@ func (m *Module) Router() chi.Router {
 		r.Use(auth.Authenticator(m.tokenAuth))
 		r.Use(auth.UserContextInjector)
 
-		r.Post("/createtenantshigt", m.handler.CreataTenantShiftResponse)
+		r.Post("/createtenantshigt", m.Handler.CreateTenanthifts)
 	})
 	return r
 }

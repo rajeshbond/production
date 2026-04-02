@@ -19,4 +19,6 @@ var (
 
 	ErrTenantNotUpdated    = errors.New("Tenant not updated")
 	ErrTenantDeletedInPast = errors.New("Tenant deleted in Past not Found")
+	ErrTenantNotVerified   = errors.New("Tenant not verified, Please contact Admin")
+	ErrTenantNotActive     = errors.New("Tenant Not active Please cal Admin")
 )

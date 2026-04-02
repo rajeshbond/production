@@ -2,6 +2,6 @@ package users
 
 import "context"
 
-type RoleProvide interface {
+type RoleProvider interface {
 	GetRoleNameByID(ctx context.Context, roleID int64) (string, error)
 }

@@ -7,7 +7,7 @@ import (
 )
 
 type Module struct {
-	handler   *Handler
+	Handler   *Handler
 	service   *Service
 	store     *Store
 	tokenAuth *jwtauth.JWTAuth
@@ -23,6 +23,6 @@ func NewModule(db *sql.DB, tokenauth *jwtauth.JWTAuth) *Module {
 		tokenAuth: tokenauth,
 		store:     store,
 		service:   service,
-		handler:   handler,
+		Handler:   handler,
 	}
 }

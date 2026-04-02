@@ -9,6 +9,7 @@ var (
 	ErrPasswordRequired              = errors.New("password is required")
 	ErrTenantIDRequired              = errors.New("tenant id is required")
 	ErrRoleIDRequired                = errors.New("role id is required")
+	ErrUserDeleted                   = errors.New("User Already Deleted")
 	ErrUserAlreadyExistForThisTenant = errors.New("User Already Exist for this Tenant")
 
 	// 🔹 Business Logic Errors
@@ -25,4 +26,13 @@ var (
 	ErrInternalServer       = errors.New("internal server error")
 	ErrEmployeeIDReqyured   = errors.New("employee_id is required")
 	ErrAlreadyTenantPresent = errors.New("tenant not Present")
+
+	// Tenant
+
+	ErrTenantDeleted         = errors.New("Tenant Already Deleted")
+	ErrTenantInActive        = errors.New("Tenant Not active Please cal Admin")
+	ErrTenantVerified        = errors.New("Tenant Not Verified, Please contact Admin")
+	ErrRoleNotFound          = errors.New("Role not found")
+	ErrOnlyTenantAdminCreate = errors.New("Only Can Create Tenant Admin")
+	ErrTenantIDMismatched    = errors.New("Tenant ID Mismatched with Employee ID")
 )

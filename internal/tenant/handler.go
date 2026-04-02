@@ -7,6 +7,8 @@ package tenant
 
 // 2. Tenant Verification
 
+// 3. Delete Tenant
+
 //////////////////////////////////////
 
 //////////////////////////////////////
@@ -22,7 +24,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-playground/validator"
+	"github.com/go-playground/validator/v10"
 	"github.com/rajesh_bond/production/internal/auth"
 	"github.com/rajesh_bond/production/internal/common/response"
 )

@@ -130,6 +130,7 @@ SELECT
     updated_at
 FROM "user"
 WHERE id = $1
+AND is_deleted = FALSE
 `
 
 	var user User
@@ -184,6 +185,7 @@ func (s *Store) GetUsersByTenantID(ctx context.Context, tenantID int64) ([]User,
     updated_at
 FROM "user"
 WHERE tenant_id = $1
+AND is_deleted = FALSE
 ORDER BY id
 `
 
@@ -240,6 +242,7 @@ func (s *Store) GetPasswordHashbyEmplopeeID(ctx context.Context, employeeID stri
 	  password
 		FROM "user"
 		WHERE employee_id = $1
+		AND is_deleted = FALSE
 	`
 	payload := &UserPayload{}
 
@@ -422,7 +425,7 @@ func (s *Store) IsTenantExist(ctx context.Context, tennatCode string) (bool, err
 }
 
 // 9. Get Verify Tenant User
-func (s *Store) GetVerifyTenantUser(ctx context.Context, employeeID string, tenantID int64) (bool, error) {
+func (s *Store) VerifyTenantUser(ctx context.Context, employeeID string, tenantID int64) (bool, error) {
 
 	query := `
 	UPDATE "user"
@@ -528,12 +531,15 @@ func (s *Store) DeleteTenantUser(ctx context.Context, employeeID string, tenantI
 
 	return true, nil
 }
+
+// 12.GetUserbyEmployeeID
 func (s *Store) GetUserbyEmploeeID(ctx context.Context, employeeID string, tenantID int64) (*CreateUserResponse, error) {
 
 	query := `
 		SELECT id,
 			employee_id,
 			tenant_id,
+			role_id,
 			user_name,
 			email,
 			phone,
@@ -554,6 +560,7 @@ func (s *Store) GetUserbyEmploeeID(ctx context.Context, employeeID string, tenan
 		&resp.ID,
 		&resp.EmployeeID,
 		&resp.TenantID,
+		&resp.RoleID,
 		&resp.UserName,
 		&resp.Email,
 		&resp.Phone,
@@ -572,5 +579,34 @@ func (s *Store) GetUserbyEmploeeID(ctx context.Context, employeeID string, tenan
 	}
 
 	return &resp, nil
+
+}
+
+// 13. Get User Status
+
+func (s *Store) GetUserStatus(ctx context.Context, employeeID string) (bool, bool, bool, error) {
+	query := `
+		SELECT is_verified,
+		is_active,
+		is_deleted
+		FROM "user"
+		WHERE employee_id = $1
+	`
+	var isVerified, isActive, isDeleted bool
+
+	err := s.db.QueryRowContext(ctx, query, employeeID).Scan(
+		&isVerified,
+		&isActive,
+		&isDeleted,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, false, false, errors.New("User not found")
+		}
+		return false, false, false, err
+	}
+
+	return isVerified, isActive, isDeleted, nil
 
 }

@@ -19,6 +19,7 @@ package tenant
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -66,6 +67,8 @@ func (s *Service) CreateTenant(ctx context.Context, dto CreateTenantDTO) (*Tenan
 		return nil, ErrTenantCodeExists
 	}
 
+	dto.TenantCode = strings.ToLower(dto.TenantCode)
+
 	tenant, err := s.store.Create(ctx, dto)
 	if err != nil {
 		return nil, err
@@ -108,6 +111,20 @@ func (s *Service) CreateSuperTenantTx(ctx context.Context, tx *sql.Tx, dto Creat
 
 func (ser *Service) TenantVerifcation(ctx context.Context, tenantCode string) (string, error) {
 
+	// Check the tenant code in the DB
+
+	tenantExist, err := ser.store.TenantCodeInDB(ctx, tenantCode)
+
+	fmt.Println("Tenant Exist", tenantExist)
+
+	if err != nil {
+		return "Intenal server Error", err
+	}
+
+	if !tenantExist {
+		return "", errors.New("Tenant Not Present")
+	}
+
 	tenant, err := ser.store.GetTenantbyCode(ctx, tenantCode)
 	fmt.Println("tenant:-", tenant.IsDeleted)
 	if err != nil {
@@ -122,7 +139,7 @@ func (ser *Service) TenantVerifcation(ctx context.Context, tenantCode string) (s
 		return TenantAlreadyVerifed, nil
 	}
 
-	TenantVerifed, err := ser.store.TenantVerification(ctx, tenantCode)
+	TenantVerifed, err := ser.store.VerifyTenenat(ctx, tenantCode)
 
 	if err != nil {
 		return "Intenal server Error", err
@@ -140,6 +157,15 @@ func (ser *Service) TenantVerifcation(ctx context.Context, tenantCode string) (s
 // 4. Delete Tenant
 
 func (ser *Service) DeleteTenant(ctx context.Context, tenantCode string, deletedBy int64) (string, error) {
+
+	isExists, err := ser.store.TenantCodeInDB(ctx, tenantCode)
+	if err != nil {
+		return response.InternalServerError, err
+	}
+
+	if !isExists {
+		return TenantNotFound, nil
+	}
 
 	tenant, err := ser.store.GetTenantbyCode(ctx, tenantCode)
 	if err != nil {
@@ -159,7 +185,7 @@ func (ser *Service) DeleteTenant(ctx context.Context, tenantCode string, deleted
 		return TenantNotDeleted, nil
 	}
 
-	return TenantNotDeleted, nil
+	return TenantDeleted, nil
 
 }
 
@@ -280,5 +306,26 @@ func (ser *Service) UpdateTenant(ctx context.Context, tenantCode string, dto Upd
 }
 
 func (s *Service) GetTenantIDByCode(ctx context.Context, tenantCode string) (int64, error) {
+
+	isVerified, isActive, isDeleted, err := s.store.GetTenantStatus(ctx, tenantCode)
+
+	if err != nil {
+		return 0, err
+	}
+	if isDeleted {
+		return 0, ErrTenantDeletedInPast
+	}
+	if !isActive {
+		return 0, ErrTenantNotActive
+	}
+
+	if !isVerified {
+		return 0, ErrTenantNotVerified
+	}
 	return s.store.GetTenantIDByCode(ctx, tenantCode)
+}
+
+func (s *Service) GetTenantStatus(ctx context.Context, tenantCode string) (bool, bool, bool, error) {
+
+	return s.store.GetTenantStatus(ctx, tenantCode)
 }

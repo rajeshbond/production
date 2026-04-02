@@ -32,21 +32,98 @@ import (
 
 type Service struct {
 	Store          *Store
-	RoleProvide    RoleProvide
+	RoleProvider   RoleProvider
 	TenantProvider TenantProvider
 }
 
-func NewService(store *Store, roleProvider RoleProvide, tenantProvider TenantProvider) *Service {
+func NewService(store *Store, roleProvider RoleProvider, tenantProvider TenantProvider) *Service {
 	return &Service{
 		Store:          store,
-		RoleProvide:    roleProvider,
+		RoleProvider:   roleProvider,
 		TenantProvider: tenantProvider,
 	}
 }
 
-// 1. Create User
-func (ser *Service) CreateUser(ctx context.Context, req UserCreateRequest) (*UserResponse, error) {
+// 1. Create User - Corrected
+func (ser *Service) CreateTenantAdmin(ctx context.Context, claims *auth.UserClaims, req UserCreateRequest) (*UserResponse, error) {
 
+	// Auth check (who can create the Tenant Admin)
+
+	// 1. Validate request
+	if err := utils.Validate.Struct(req); err != nil {
+		return nil, fmt.Errorf("%w,%v", ErrInvalidRequest, err)
+	}
+	// 2. Validate employee_id format (extra safety if needed)
+	if !strings.Contains(req.EmployeeID, "@") {
+		return nil, ErrInvalidRequest
+	}
+	// 1. Validate request
+
+	if err := utils.Validate.Struct(req); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidRequest, err)
+	}
+
+	// 2.Validate empolyee_id format (extra saftey of needed)
+
+	if !strings.Contains(req.EmployeeID, "@") {
+		return nil, ErrInvalidRequest
+	}
+
+	tenandCode, err := auth.Tcode(req.EmployeeID)
+	// 3. check Tenant status
+
+	employeeTenantID, err := ser.TenantProvider.GetTenantIDByCode(ctx, tenandCode)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.TenantID != employeeTenantID {
+		return nil, ErrTenantIDMismatched
+	}
+
+	isVerified, isActive, isDeleted, err := ser.TenantProvider.GetTenantStatus(ctx, tenandCode)
+	if err != nil {
+		return nil, err
+	}
+
+	if isDeleted {
+		return nil, ErrTenantDeleted
+	}
+
+	if !isActive {
+		return nil, ErrTenantInActive
+	}
+	if !isVerified {
+		return nil, ErrTenantVerified
+	}
+
+	reqRole, err := ser.RoleProvider.GetRoleNameByID(ctx, req.RoleID)
+	if err != nil {
+		return nil, err
+	}
+
+	if reqRole != "tenantadmin" {
+		return nil, ErrOnlyTenantAdminCreate
+	}
+
+	// Asining the Created and updated by to struct
+	req.CreatedBy = &claims.UserID
+	req.UpdatedBy = &claims.UserID
+
+	// Check the role is Present in the DB
+
+	// 4. check User already exsits (options but recommended)
+	exists, err := ser.Store.IsEmployeeExist(ctx, req.EmployeeID, req.TenantID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if exists {
+		return nil, ErrUserAlreadyExistForThisTenant
+	}
+
+	// 5. Hash password
 	hashedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
 		return nil, err
@@ -57,11 +134,10 @@ func (ser *Service) CreateUser(ctx context.Context, req UserCreateRequest) (*Use
 	// Call store
 	user, err := ser.Store.CreateUser(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create user failed: %w", err)
 	}
 
-	// convert DB model -> Response DTO
-
+	// 🔹 7. Map to response
 	res := &UserResponse{
 		ID:         user.ID,
 		TenantID:   user.TenantID,
@@ -82,7 +158,7 @@ func (ser *Service) CreateUser(ctx context.Context, req UserCreateRequest) (*Use
 
 }
 
-// 2. Login
+// 2. Login - Corrected
 func (ser *Service) LoginUser(ctx context.Context, req LoginRequest) (*LoginResponse, error) {
 
 	// validate request
@@ -95,17 +171,10 @@ func (ser *Service) LoginUser(ctx context.Context, req LoginRequest) (*LoginResp
 		return nil, err
 	}
 
-	fmt.Println("Tenant Code:-", tcode)
-
 	tenantID, err := ser.TenantProvider.GetTenantIDByCode(ctx, tcode)
 	if err != nil {
 		return nil, err
 	}
-
-	// tenantID, err := ser.Store.GetTenantIDByCode(ctx, tcode)
-	// if err != nil {
-	// 	return nil, err
-	// }
 
 	// ✅ Check status
 	found, isVerified, err := ser.Store.GetVerificationStatus(ctx, req.EmployeeID, tenantID)
@@ -117,8 +186,8 @@ func (ser *Service) LoginUser(ctx context.Context, req LoginRequest) (*LoginResp
 		return nil, errors.New("user not found")
 	}
 
-	if isVerified {
-		return nil, errors.New("user already verified")
+	if !isVerified {
+		return nil, errors.New("User Not Verified please contact Admin")
 	}
 
 	// fetch user data + password
@@ -132,7 +201,7 @@ func (ser *Service) LoginUser(ctx context.Context, req LoginRequest) (*LoginResp
 		return nil, err
 	}
 
-	role, err := ser.RoleProvide.GetRoleNameByID(ctx, tokenPayload.RoleID)
+	role, err := ser.RoleProvider.GetRoleNameByID(ctx, tokenPayload.RoleID)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +225,7 @@ func (ser *Service) LoginUser(ctx context.Context, req LoginRequest) (*LoginResp
 		Token: tokenString}, nil
 }
 
-// 3. Create Super User
+// 3. Create Super User - Corrected
 func (s *Service) CreateSuperUserTx(ctx context.Context, tx *sql.Tx, tenantID int64, roleID int64, dto UserSuperRequest) (int64, error) {
 	createdBy := int64(1)
 	hasshedPassword, err := utils.HashPassword(dto.Password)
@@ -197,6 +266,20 @@ func (s *Service) CreateTenantUser(ctx context.Context, claims *auth.UserClaims,
 		return nil, err
 	}
 
+	reqRole, err := s.RoleProvider.GetRoleNameByID(ctx, req.RoleID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("role check", reqRole)
+
+	err = auth.TenantRoleCheck(reqRole)
+
+	if err != nil {
+		return nil, err
+	}
+
 	// Duplicate check
 
 	exists, err := s.Store.IsEmployeeExist(ctx, req.EmployeeID, req.TenantID)
@@ -214,6 +297,9 @@ func (s *Service) CreateTenantUser(ctx context.Context, claims *auth.UserClaims,
 		return nil, err
 	}
 	req.Password = hashedPassword
+
+	req.CreatedBy = &claims.UserID
+	req.UpdatedBy = &claims.UserID
 
 	user, err := s.Store.CreateTenantUser(ctx, req)
 
@@ -264,6 +350,24 @@ func (ser *Service) CheckTenantExist(ctx context.Context, tenantCode string) err
 // 7. Verify Tenant User
 func (s *Service) VerifyTenantUser(ctx context.Context, claims *auth.UserClaims, employeeID string, tenantID int64) error {
 
+	user, err := s.Store.GetUserbyEmploeeID(ctx, employeeID, tenantID)
+	if err != nil {
+		return err
+	}
+	userRole, err := s.RoleProvider.GetRoleNameByID(ctx, user.RoleID)
+
+	if err != nil {
+		return err
+	}
+
+	if user.IsDeleted {
+		return ErrUserDeleted
+	}
+
+	if user.IsVerified {
+		return errors.New("user already verified")
+	}
+
 	// ✅ Auth check
 	if err := auth.ValidateTenantAccess(
 		claims.Role,
@@ -273,31 +377,40 @@ func (s *Service) VerifyTenantUser(ctx context.Context, claims *auth.UserClaims,
 		return err
 	}
 
-	// ✅ Check status
-	found, isVerified, err := s.Store.GetVerificationStatus(ctx, employeeID, tenantID)
-	if err != nil {
-		return err
+	// ✅ Basic validation
+
+	if (claims.Role == "superadmin" || claims.Role == "admin") && (userRole == "tenantadmin") {
+
+		updated, err := s.Store.VerifyTenantUser(ctx, employeeID, tenantID)
+		if err != nil {
+			return err
+		}
+
+		if !updated {
+			return errors.New("verification failed")
+		}
+
+		return nil
 	}
 
-	if !found {
-		return errors.New("user not found")
+	if claims.Role == "tenantadmin" {
+
+		if claims.TenantID != user.TenantID {
+			return ErrTenantIDMismatched
+		}
+		updated, err := s.Store.VerifyTenantUser(ctx, employeeID, tenantID)
+		if err != nil {
+			return err
+		}
+
+		if !updated {
+			return errors.New("verification failed")
+		}
+
+		return nil
 	}
 
-	if isVerified {
-		return errors.New("user already verified")
-	}
-
-	// ✅ Update
-	updated, err := s.Store.GetVerifyTenantUser(ctx, employeeID, tenantID)
-	if err != nil {
-		return err
-	}
-
-	if !updated {
-		return errors.New("verification failed")
-	}
-
-	return nil
+	return ErrUnauthorized
 }
 
 // 8. Delete Tenant User
@@ -312,35 +425,63 @@ func (ser *Service) DeleteTenantUser(ctx context.Context, claims *auth.UserClaim
 		return errors.New("tenant_id is required")
 	}
 
-	// ✅ Auth check (who can delete whom)
-	if err := auth.ValidateTenantAccess(claims.Role, claims.EmployeeID, employeeID); err != nil {
+	user, err := ser.Store.GetUserbyEmploeeID(ctx, employeeID, tenantID)
+	if err != nil {
 		return err
 	}
+	userRole, err := ser.RoleProvider.GetRoleNameByID(ctx, user.RoleID)
 
-	// ✅ Fetch user
-	cUser, err := ser.Store.GetUserbyEmploeeID(ctx, employeeID, tenantID)
 	if err != nil {
 		return err
 	}
 
-	if cUser == nil {
-		return errors.New("user not found")
+	if user.IsDeleted {
+		return ErrUserDeleted
 	}
 
-	// ✅ Already deleted check
-	if cUser.IsDeleted {
-		return errors.New("user already deleted")
-	}
-
-	// ✅ Soft delete
-	deleted, err := ser.Store.DeleteTenantUser(ctx, employeeID, tenantID, claims.UserID)
-	if err != nil {
+	// ✅ Auth check
+	if err := auth.ValidateTenantAccess(
+		claims.Role,
+		claims.EmployeeID,
+		employeeID,
+	); err != nil {
 		return err
 	}
 
-	if !deleted {
-		return errors.New("failed to delete user")
+	// ✅ Basic validation
+
+	if (claims.Role == "superadmin" || claims.Role == "admin") && (userRole == "tenantadmin") {
+
+		deleted, err := ser.Store.DeleteTenantUser(ctx, employeeID, tenantID, claims.UserID)
+		if err != nil {
+			return err
+		}
+
+		if !deleted {
+			return errors.New("failed to delete user")
+		}
+
+		return nil
 	}
 
-	return nil
+	if claims.Role == "tenantadmin" {
+
+		if claims.TenantID != user.TenantID {
+			return ErrTenantIDMismatched
+		}
+
+		deleted, err := ser.Store.DeleteTenantUser(ctx, employeeID, tenantID, claims.UserID)
+		if err != nil {
+			return err
+		}
+
+		if !deleted {
+			return errors.New("failed to delete user")
+		}
+
+		return nil
+	}
+
+	return ErrUnauthorized
+
 }

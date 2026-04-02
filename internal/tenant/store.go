@@ -20,6 +20,8 @@ package tenant
 
 // 10. Update the Tenant by Tenant code
 
+// 11. Get Tenant Status
+
 //<--- Code Starts here --> //
 
 import (
@@ -83,10 +85,12 @@ func (s *Store) Create(ctx context.Context, dto CreateTenantDTO) (*Tenant, error
 // 2. Get Tenant ID by Name
 
 func (s *Store) GetTenantIDByCode(ctx context.Context, tenantName string) (int64, error) {
+
 	query := `
 		SELECT id
 		FROM tenant
 		WHERE LOWER(tenant_code) = LOWER($1)
+		AND is_deleted = FALSE
 	`
 
 	var tenantID int64
@@ -94,7 +98,7 @@ func (s *Store) GetTenantIDByCode(ctx context.Context, tenantName string) (int64
 	err := s.db.QueryRowContext(ctx, query, tenantName).Scan(&tenantID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return 0, errors.New("Role not found")
+			return 0, errors.New("Tenant Not Found")
 		}
 
 		return 0, err
@@ -110,6 +114,7 @@ func (s *Store) GetTenantNameByID(ctx context.Context, tenantID int64) (string, 
 		SELECT tenant_name
 		FROM tenant
 		WHERE id = $1
+		AND is_deleted = FALSE
 	`
 
 	var tenatName string
@@ -130,28 +135,6 @@ func (s *Store) GetTenantNameByID(ctx context.Context, tenantID int64) (string, 
 	return tenatName, nil
 
 }
-
-// 4. Get Tenant Code by ID
-// func (s *Store) GetTenantCodeByID(ctx context.Context, tenantID int64) (string, error) {
-
-// 	query := `
-// 		SELECT tenant_code
-// 		FROM tenant
-// 		WHERE id = $1
-// 	`
-
-// 	var tenantCode string
-
-// 	err := s.db.QueryRowContext(ctx, query, tenantID).Scan(&tenantCode)
-// 	if err != nil {
-// 		if err == sql.ErrNoRows {
-// 			return "", errors.New("tenant not found")
-// 		}
-// 		return "", err
-// 	}
-
-// 	return tenantCode, nil
-// }
 
 // 5. Create super Tenant Tx - Development
 
@@ -195,7 +178,8 @@ func (s *Store) TenantCodeInDB(ctx context.Context, tenantCode string) (bool, er
 		SELECT EXISTS(
     SELECT 1
     FROM tenant
-    WHERE tenant_code = LOWER($1)
+    WHERE tenant_code = LOWER($1) 
+		AND is_deleted = FALSE
 )
 `
 
@@ -212,7 +196,7 @@ func (s *Store) TenantCodeInDB(ctx context.Context, tenantCode string) (bool, er
 }
 
 // 7. Tenant verification store function
-func (s *Store) TenantVerification(ctx context.Context, tenantCode string) (bool, error) {
+func (s *Store) VerifyTenenat(ctx context.Context, tenantCode string) (bool, error) {
 
 	query := `
 	UPDATE tenant
@@ -258,6 +242,7 @@ func (s *Store) GetTenantbyCode(ctx context.Context, tenantCode string) (*Tenant
 		updated_at
 		FROM tenant
 		WHERE tenant_code = LOWER($1)
+		AND is_deleted = FALSE
 	`
 
 	var t TenantResponse
@@ -418,4 +403,32 @@ func (s *Store) UpdateTenant(ctx context.Context, t *Tenant) (bool, error) {
 	}
 
 	return true, nil
+}
+
+// 11. Get Tenant Status
+
+func (s *Store) GetTenantStatus(ctx context.Context, tenantCode string) (bool, bool, bool, error) {
+
+	query := `
+	SELECT is_verified, is_active, is_deleted
+	FROM tenant
+	WHERE tenant_code = $1
+`
+
+	var isVerified, isActive, IsDeleted bool
+
+	err := s.db.QueryRowContext(ctx, query, tenantCode).Scan(
+		&isVerified,
+		&isActive,
+		&IsDeleted,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, false, false, errors.New("tenant not found")
+		}
+	}
+
+	return isVerified, isActive, IsDeleted, nil
+
 }

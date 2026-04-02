@@ -1,7 +1,22 @@
 package users
 
+/*
+Handler Index
+/////////////////////////////////
+// 1. Create User
+// 2. Login
+// 3. Test Private route
+// 4. Create Tenant User
+// 5. Verify Tenant User
+// 6. Delete Tenant User
+
+*/
+
+// Imports
+
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -12,11 +27,13 @@ import (
 	"github.com/rajesh_bond/production/internal/common/response"
 )
 
+// structs
 type Handler struct {
 	Service   *Service
 	tokenAuth *jwtauth.JWTAuth
 }
 
+// Struct connstructor
 func NewHandler(service *Service, tokenAuth *jwtauth.JWTAuth) *Handler {
 	return &Handler{
 		Service:   service,
@@ -24,8 +41,25 @@ func NewHandler(service *Service, tokenAuth *jwtauth.JWTAuth) *Handler {
 	}
 }
 
-func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	// fmt.Println("Rajesh Bondgilwar")
+// 1. Create Tenant Admin
+func (h *Handler) CreateTenantAdmin(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	claims, ok := auth.GetUserClaimsFromContext(ctx)
+	if !ok {
+		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
+		return
+	}
+
+	makeTenantAdmin := auth.IsSuper(claims.Role)
+
+	// fmt.Println("makeTenantAdmin", makeTenantAdmin)
+
+	if !makeTenantAdmin {
+		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
+		return
+	}
+
 	var req UserCreateRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -33,18 +67,18 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := r.Context()
-
-	user, err := h.Service.CreateUser(ctx, req)
+	user, err := h.Service.CreateTenantAdmin(ctx, claims, req)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	response.JSON(w, http.StatusCreated, user)
 
 }
 
+// 2. Login
 func (h *Handler) LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
@@ -71,6 +105,7 @@ func (h *Handler) LoginUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// 3. Test Private route
 func (h *Handler) Test1(w http.ResponseWriter, r *http.Request) {
 
 	// Extract JWT claims from context
@@ -107,12 +142,18 @@ func (h *Handler) Test1(w http.ResponseWriter, r *http.Request) {
 	// response.JSON(w, http.StatusOK, string(jsonData))
 }
 
+// 4. Create Tenant User
 func (h *Handler) CreateTenantUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	defer r.Body.Close()
 
 	// Extrating claims (Only Here)
 	claims, ok := auth.GetUserClaimsFromContext(ctx)
+
+	if claims.Role != "tenantadmin" {
+		response.Error(w, http.StatusForbidden, "Permisson not allowed , only tenant Admin can perform operations...")
+		return
+	}
 	if !ok {
 		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
 		return
@@ -123,6 +164,11 @@ func (h *Handler) CreateTenantUser(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		response.JSON(w, http.StatusBadRequest, response.InvalidRequestBody)
+		return
+	}
+
+	if claims.TenantID != req.TenantID {
+		response.Error(w, http.StatusForbidden, "Not allowed for this tenant")
 		return
 	}
 
@@ -138,6 +184,7 @@ func (h *Handler) CreateTenantUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// 5. Verify Tenant User
 func (h *Handler) VerifyTenantUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	defer r.Body.Close()
@@ -146,6 +193,7 @@ func (h *Handler) VerifyTenantUser(w http.ResponseWriter, r *http.Request) {
 
 	claims, ok := auth.GetUserClaimsFromContext(ctx)
 	if !ok {
+		fmt.Println("Rajesh Bondgilwar")
 		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
 		return
 	}
@@ -182,6 +230,7 @@ func (h *Handler) VerifyTenantUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// 6. Delete Tenant User
 func (h *Handler) DeleteTenantUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 

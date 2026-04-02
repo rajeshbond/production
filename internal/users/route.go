@@ -15,7 +15,7 @@ func (m *Module) Router() chi.Router {
 	})
 
 	// Public routes
-	r.Post("/createuser", m.Handler.CreateUser)
+	// r.Post("/createuser", m.Handler.CreateTenantAdmin)
 	r.Post("/loginuser", m.Handler.LoginUser)
 
 	// Private routes
@@ -26,6 +26,7 @@ func (m *Module) Router() chi.Router {
 		r.Use(auth.UserContextInjector)
 
 		r.Get("/test", m.Handler.Test1)
+		r.Post("/createadmin", m.Handler.CreateTenantAdmin)
 		r.Post("/ctenatuser", m.Handler.CreateTenantUser)
 		r.Patch("/verifyuser", m.Handler.VerifyTenantUser)
 		r.Delete("/deleteuser/{tenant_id}/user/{employee_id}", m.Handler.DeleteTenantUser)

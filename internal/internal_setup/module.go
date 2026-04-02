@@ -22,7 +22,7 @@ func NewModule(db *sql.DB) *Module {
 	// Initialize services
 	roleService := userrole.NewService(roleStore)
 	tenantService := tenant.NewService(tenantStore)
-	userService := users.NewService(userStore, users.RoleProvide(roleService), tenantStore)
+	userService := users.NewService(userStore, users.RoleProvider(roleService), tenantStore)
 
 	// Initialize setup service
 	setupService := NewService(db, tenantService, roleService, userService)

@@ -43,8 +43,8 @@ func ValidateTenantAccess(role, claimsEmpID, reqEmpID string) error {
 	return errors.New("insufficient permissions")
 }
 
-func Tcode(id string) (string, error) {
-	parts := strings.SplitN(id, "@", 2)
+func Tcode(employee_id string) (string, error) {
+	parts := strings.SplitN(employee_id, "@", 2)
 
 	if len(parts) < 2 || parts[1] == "" {
 		return "", errors.New("invalid employee id format")
@@ -57,7 +57,6 @@ func Tcode(id string) (string, error) {
 
 func ValidateTenantAccesswithTenantCode(role string, claimsTenantID, reqTenantID int64) error {
 
-	fmt.Println("Rajesh Bondgilwar inside switch case")
 	switch role {
 
 	case RoleSuperAdmin, RoleAdmin:
@@ -71,10 +70,18 @@ func ValidateTenantAccesswithTenantCode(role string, claimsTenantID, reqTenantID
 			return ErrTenantMismatch
 		}
 
-		fmt.Println("Rajesh Passed ")
 		return nil // ✅ IMPORTANT FIX
 
 	default:
 		return ErrUnauthorized
+	}
+}
+
+func TenantRoleCheck(role string) error {
+	switch role {
+	case "superadmin", "admin", "tenantadmin":
+		return fmt.Errorf("not allowed to create admin role")
+	default:
+		return nil
 	}
 }
