@@ -90,3 +90,4 @@ func (s *Store) GetExistingShifts(ctx context.Context, tx *sql.Tx, tenantID int6
 
 	return existing, nil
 }
+

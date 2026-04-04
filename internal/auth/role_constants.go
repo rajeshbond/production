@@ -4,4 +4,5 @@ const (
 	RoleSuperAdmin  = "superadmin"
 	RoleAdmin       = "admin"
 	RoleTenantAdmin = "tenantadmin"
+	RoleUser        = "user"
 )

@@ -11,7 +11,6 @@ import (
 
 	"github.com/rajesh_bond/production/cmd/service"
 	internalsetup "github.com/rajesh_bond/production/internal/internal_setup"
-	shifttiming "github.com/rajesh_bond/production/internal/shift_timings"
 	tenant "github.com/rajesh_bond/production/internal/tenant"
 	tenantshifts "github.com/rajesh_bond/production/internal/tenant_shifts"
 	userrole "github.com/rajesh_bond/production/internal/user_role"
@@ -51,28 +50,23 @@ func NewRouter(app *App) http.Handler {
 	// ---------------- MODULES ----------------
 
 	// Internal setup
-	internalModule := internalsetup.NewModule(app.DB.SQLDB)
+	internalModule := internalsetup.NewModule(app.DB)
 	r.Mount("/internal", internalModule.Router())
 
 	// User Role
-	userRoleModule := userrole.NewModule(app.DB.SQLDB)
+	userRoleModule := userrole.NewModule(app.DB)
 	r.Mount("/user-role", userRoleModule.Router())
 
 	// Tenant
-	tenantModule := tenant.NewModule(app.DB.SQLDB)
+	tenantModule := tenant.NewModule(app.DB)
 	r.Mount("/tenant", tenantModule.Router())
 
 	// Tenant shift
-	tenantShiftMoulde := tenantshifts.NewModule(app.DB.SQLDB, tokenAuth)
+	tenantShiftMoulde := tenantshifts.NewModule(app.DB, tokenAuth)
 	r.Mount("/tenantshift", tenantShiftMoulde.Router())
 
-	// Shift timings
-
-	shiftTimingsModule := shifttiming.NewModule(app.DB, tokenAuth, userRoleModule.Store)
-	r.Mount("/shifttiming", shiftTimingsModule.Router())
-
 	// Users
-	usersModule := users.NewModule(app.DB.SQLDB, tokenAuth, userRoleModule.Service, tenantModule.Service)
+	usersModule := users.NewModule(app.DB, tokenAuth, userRoleModule.Service, tenantModule.Service)
 	r.Mount("/users", usersModule.Router())
 
 	return r
