@@ -1,4 +1,4 @@
-package shifttiming
+package defect
 
 import (
 	"net/http"
@@ -9,7 +9,7 @@ import (
 
 func (m *Module) Router() chi.Router {
 	r := chi.NewRouter()
-	r.Get("/shift", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/defect", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("User Test Ok"))
 	})
 
@@ -17,7 +17,7 @@ func (m *Module) Router() chi.Router {
 		r.Use(auth.Verifier(m.tokenAuth))
 		r.Use(auth.Authenticator(m.tokenAuth))
 		r.Use(auth.UserContextInjector)
-		r.Post("/shifttime", m.Handler.BulkCreateShift)
+		r.Post("/createdefect", m.Handler.CreateDefects)
 
 	})
 

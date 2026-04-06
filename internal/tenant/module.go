@@ -7,7 +7,7 @@ import (
 type Module struct {
 	Handler *Handler
 	Service *Service
-	store   *Store
+	Store   *Store
 }
 
 func NewModule(db *sql.DB) *Module {
@@ -16,7 +16,7 @@ func NewModule(db *sql.DB) *Module {
 	handler := NewHandler(service)
 
 	return &Module{
-		store:   store,
+		Store:   store,
 		Service: service,
 		Handler: handler,
 	}

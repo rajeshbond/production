@@ -33,7 +33,7 @@ CONSTRAINT check_shift_time_valid CHECK (shift_start <> shift_end),
 
 -- Ensure valid weekday (0–6)
 CONSTRAINT check_weekday_valid
-        CHECK (weekday BETWEEN 0 AND 6)
+        CHECK (weekday BETWEEN 1 AND 7)
 );
 
 -- Index for faster queries

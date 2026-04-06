@@ -10,6 +10,7 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	"github.com/rajesh_bond/production/cmd/service"
+	"github.com/rajesh_bond/production/internal/defect"
 	internalsetup "github.com/rajesh_bond/production/internal/internal_setup"
 	shifttiming "github.com/rajesh_bond/production/internal/shift_timings"
 	tenant "github.com/rajesh_bond/production/internal/tenant"
@@ -68,8 +69,13 @@ func NewRouter(app *App) http.Handler {
 
 	// Shift timings
 
-	shiftTimingsModule := shifttiming.NewModule(app.DB, tokenAuth, userRoleModule.Store)
+	shiftTimingsModule := shifttiming.NewModule(app.DB, tokenAuth, tenantModule.Store)
 	r.Mount("/shifttiming", shiftTimingsModule.Router())
+
+	// Defect
+
+	defectModule := defect.NewModule(app.DB.SQLDB, tokenAuth)
+	r.Mount("/defect", defectModule.Router())
 
 	// Users
 	usersModule := users.NewModule(app.DB.SQLDB, tokenAuth, userRoleModule.Service, tenantModule.Service)

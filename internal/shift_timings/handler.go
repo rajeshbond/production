@@ -21,34 +21,33 @@ func NewHandler(service *Service, tokenAuth *jwtauth.JWTAuth) *Handler {
 	}
 }
 
-func (h *Handler) CreateShiftTimings(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) BulkCreateShift(w http.ResponseWriter, r *http.Request) {
+	var req BulkCreateShiftRequest
 
-	defer r.Body.Close()
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	ctx := r.Context()
 
 	claims, ok := auth.GetUserClaimsFromContext(ctx)
+
 	if !ok {
-		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
+		response.Error(w, http.StatusUnauthorized, auth.UnAuthorised)
 		return
 	}
 
-	var req CreateShiftTimingRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		response.Error(w, http.StatusForbidden, response.InvalidRequestBody)
-		return
-	}
-
-	if claims.Role != auth.RoleTenantAdmin {
-		response.Error(w, http.StatusForbidden, response.OnlyTenantAllowed)
-		return
-	}
-
-	resp, err := h.Service.CreateShiftTiming(ctx, req, claims)
+	result, err := h.Service.BulkCreateShift(ctx, req, claims)
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, err.Error())
+		response.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	response.JSON(w, http.StatusCreated, resp)
+
+	// response.JSON(w, http.StatusCreated, result)
+	response.JSON(w, http.StatusCreated, map[string]interface{}{
+		"result": result,
+		"remark": "created",
+	})
+
 }

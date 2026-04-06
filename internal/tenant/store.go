@@ -107,6 +107,29 @@ func (s *Store) GetTenantIDByCode(ctx context.Context, tenantName string) (int64
 	return tenantID, nil
 }
 
+func (s *Store) GetTenantIDByName(ctx context.Context, tenantName string) (int64, error) {
+
+	query := `
+		SELECT id
+		FROM tenant
+		WHERE LOWER(tenant_name) = LOWER($1)
+		AND is_deleted = FALSE
+	`
+
+	var tenantID int64
+
+	err := s.db.QueryRowContext(ctx, query, tenantName).Scan(&tenantID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, errors.New("Tenant Not Found")
+		}
+
+		return 0, err
+	}
+
+	return tenantID, nil
+}
+
 // 3. Get Tenant by Name
 
 func (s *Store) GetTenantNameByID(ctx context.Context, tenantID int64) (string, error) {
@@ -133,6 +156,36 @@ func (s *Store) GetTenantNameByID(ctx context.Context, tenantID int64) (string, 
 	}
 
 	return tenatName, nil
+
+}
+
+func (s *Store) GetTenantCodeByID(ctx context.Context, tenantID int64) (string, error) {
+
+	fmt.Println("This function get called", tenantID)
+
+	query := `
+		SELECT tenant_code
+		FROM tenant
+		WHERE id = $1
+		AND is_deleted = FALSE
+	`
+
+	var tenatCode string
+
+	err := s.db.QueryRowContext(
+		ctx,
+		query,
+		tenantID).Scan(&tenatCode)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", errors.New("No Role found")
+		}
+
+		return "", err
+	}
+
+	return tenatCode, nil
 
 }
 

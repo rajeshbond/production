@@ -12,13 +12,13 @@ type Module struct {
 	tokenAuth *jwtauth.JWTAuth
 }
 
-func NewModule(db *database.DB, tokenAuth *jwtauth.JWTAuth, roleProvider RoleProvider) *Module {
+func NewModule(db *database.DB, tokenAuth *jwtauth.JWTAuth, tenantProvider TenantProvider) *Module {
 
 	// 🔹 Initialize Store (sql + pgx)
 	store := NewStore(db)
 
 	// 🔹 Initialize Service
-	service := NewService(store, roleProvider)
+	service := NewService(store, tenantProvider)
 
 	// 🔹 Initialize Handler
 	handler := NewHandler(service, tokenAuth)
