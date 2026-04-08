@@ -24,8 +24,7 @@ func (s *Store) CreateTenantShift(ctx context.Context, tx *sql.Tx, tenantID int6
 	query := `
 		INSERT INTO tenant_shift(tenant_id,shift_name,created_by,updated_by)
 		VALUES($1,$2,$3,$4)
-		ON CONFLICT (tenant_id,shift_name)
-		DO UPDATE SET shift_name = EXCLUDED.shift_name
+		ON CONFLICT (tenant_id,shift_name) DO NOTHING
 		RETURNING id 
 	`
 	var id int64

@@ -20,10 +20,7 @@ CREATE TABLE IF NOT EXISTS operation_master (
 CREATE INDEX IF NOT EXISTS idx_operation_tenant ON operation_master (tenant_id);
 
 -- Unique (active only)
-CREATE UNIQUE INDEX IF NOT EXISTS uix_operation_active ON operation_master (
-    tenant_id,
-    LOWER(operation_name)
-)
+CREATE UNIQUE INDEX IF NOT EXISTS uix_operation_active ON operation_master (tenant_id, operation_name)
 WHERE
     is_deleted = FALSE;
 

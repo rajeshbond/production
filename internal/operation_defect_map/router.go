@@ -1,4 +1,4 @@
-package defect
+package operationdefectmap
 
 import (
 	"net/http"
@@ -17,7 +17,7 @@ func (m *Module) Router() chi.Router {
 		r.Use(auth.Verifier(m.tokenAuth))
 		r.Use(auth.Authenticator(m.tokenAuth))
 		r.Use(auth.UserContextInjector)
-		r.Post("/createdefect", m.Handler.CreateDefects)
+		r.Post("/codm", m.Handler.CreateOperationWithDefect)
 
 	})
 
