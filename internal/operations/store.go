@@ -3,8 +3,10 @@ package operations
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	operationdefectmap "github.com/rajesh_bond/production/internal/operation_defect_map"
+	operationdowntimemap "github.com/rajesh_bond/production/internal/operation_downtime_map"
 )
 
 type Store struct {
@@ -83,6 +85,8 @@ func (s *Store) BulkCreateOperation(ctx context.Context, tx *sql.Tx, tenantID in
 func (s *Store) GetOperationIDByName(ctx context.Context, tx *sql.Tx, tenantID int64, operationName string) (int64, error) {
 	var id int64
 
+	fmt.Println("Opeartion Mame", operationName)
+
 	query := `
 		SELECT id 
 		from operation_master
@@ -95,14 +99,16 @@ func (s *Store) GetOperationIDByName(ctx context.Context, tx *sql.Tx, tenantID i
 		if err == sql.ErrNoRows {
 			return 0, nil
 		}
+		fmt.Println("Errorr")
 		return 0, err
 	}
+	fmt.Println("Store Operation process id", id)
 	return id, nil
 }
 
 func (s *Store) CreateOperation(ctx context.Context, tx *sql.Tx, tenantID int64, userID int64, operationName string) (int64, error) {
 	var id int64
-
+	fmt.Println("Inside create operation of store")
 	query := `
 		INSERT INTO operation_master ( tenant_id, operation_name,created_by,updated_by)
 		VALUES($1,$2,$3,$3)
@@ -114,8 +120,12 @@ func (s *Store) CreateOperation(ctx context.Context, tx *sql.Tx, tenantID int64,
 		return 0, err
 	}
 
+	fmt.Println("store ID", id)
+
 	return id, nil
 
 }
 
 var _ operationdefectmap.OperationProvider = (*Store)(nil)
+
+var _ operationdowntimemap.OperationProvider = (*Store)(nil)

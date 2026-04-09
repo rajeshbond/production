@@ -3,6 +3,9 @@ package downtime
 import (
 	"context"
 	"database/sql"
+	"fmt"
+
+	operationdowntimemap "github.com/rajesh_bond/production/internal/operation_downtime_map"
 )
 
 type Store struct {
@@ -13,7 +16,7 @@ func NewStore(db *sql.DB) *Store {
 	return &Store{db: db}
 }
 
-func (s *Store) CheckExistingDownTime(ctx context.Context, tx *sql.Tx, tenantID int64, defectName string) (bool, int64, error) {
+func (s *Store) CheckExistingDownTime(ctx context.Context, tx *sql.Tx, tenantID int64, downtimeName string) (bool, int64, error) {
 	checkQuery := `
 		SELECT id 
 		FROM downtime
@@ -21,10 +24,10 @@ func (s *Store) CheckExistingDownTime(ctx context.Context, tx *sql.Tx, tenantID 
 		AND LOWER(downtime_name) = LOWER($2)
 		AND is_deleted = FALSE
 	`
-
+	fmt.Println("CheckExisiting Down time")
 	var id int64
 
-	err := tx.QueryRowContext(ctx, checkQuery, tenantID, defectName).Scan(&id)
+	err := tx.QueryRowContext(ctx, checkQuery, tenantID, downtimeName).Scan(&id)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -81,3 +84,51 @@ func (s *Store) BulkCreateDownTime(ctx context.Context, tx *sql.Tx, tenantID int
 	return result, nil
 
 }
+
+func (s *Store) CreateDowntime(ctx context.Context, tx *sql.Tx, tenantID int64, userID int64, downtimeName string) (int64, error) {
+
+	fmt.Println("===================================================================")
+
+	query := `
+		INSERT INTO downtime (tenant_id, downtime_name, created_by, updated_by)
+		VALUES ($1, $2, $3, $3)
+		ON CONFLICT (tenant_id, LOWER(downtime_name))
+		WHERE is_deleted = FALSE
+		DO NOTHING
+		RETURNING id
+	`
+	var id int64
+	err := tx.QueryRowContext(ctx, query, tenantID, downtimeName, userID).Scan(&id)
+	if err != nil {
+		fmt.Println(err)
+		return 0, err
+	}
+	fmt.Println("created Down time id ", id)
+	return id, nil
+
+}
+
+func (s *Store) GetDowntimeIDByName(ctx context.Context, tx *sql.Tx, tenantID int64, downtimeName string) (int64, error) {
+	var id int64
+
+	query := `
+		SELECT id 
+		FROM downtime
+		WHERE tenant_id = $1
+		AND LOWER(downtime_name) = LOWER($2)
+		AND is_deleted = FALSE
+	`
+	err := tx.QueryRowContext(ctx, query, tenantID, downtimeName).Scan(&id)
+	fmt.Println("Get the Downtime ID", id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, nil // Not found
+		}
+		return 0, err //actual error
+	}
+
+	return id, nil
+
+}
+
+var _ operationdowntimemap.DowntimeProvider = (*Store)(nil)

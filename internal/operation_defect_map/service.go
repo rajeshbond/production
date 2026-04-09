@@ -91,18 +91,32 @@ func (s *Service) CreateOperationWithDefect(
 			}
 		}
 
-		// Map operation ↔ defect
-		id, err := s.store.InsertOperationDefectMap(ctx, tx, claims.TenantID, operationID, defectID)
+		exitID, err := s.store.GetOperationDefectMap(ctx, tx, claims.TenantID, operationID, defectID)
+
 		if err != nil {
 			skipped = append(skipped, defectName)
 			continue
 		}
-		if id > 0 {
-			inserted = append(inserted, defectName)
-		}
-		if id == 0 {
+
+		if exitID > 0 {
 			skipped = append(skipped, defectName)
 			continue
+		}
+
+		// Map operation ↔ defect
+		if exitID == 0 {
+			id, err := s.store.InsertOperationDefectMap(ctx, tx, claims.TenantID, operationID, defectID)
+			if err != nil {
+				skipped = append(skipped, defectName)
+				continue
+			}
+			if id > 0 {
+				inserted = append(inserted, defectName)
+			}
+			if id == 0 {
+				skipped = append(skipped, defectName)
+				continue
+			}
 		}
 
 		// Only append to inserted if defect exists and mapping succeeded
