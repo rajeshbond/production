@@ -87,8 +87,6 @@ func (s *Store) BulkCreateDownTime(ctx context.Context, tx *sql.Tx, tenantID int
 
 func (s *Store) CreateDowntime(ctx context.Context, tx *sql.Tx, tenantID int64, userID int64, downtimeName string) (int64, error) {
 
-	fmt.Println("===================================================================")
-
 	query := `
 		INSERT INTO downtime (tenant_id, downtime_name, created_by, updated_by)
 		VALUES ($1, $2, $3, $3)
@@ -103,7 +101,7 @@ func (s *Store) CreateDowntime(ctx context.Context, tx *sql.Tx, tenantID int64, 
 		fmt.Println(err)
 		return 0, err
 	}
-	fmt.Println("created Down time id ", id)
+
 	return id, nil
 
 }
@@ -119,7 +117,7 @@ func (s *Store) GetDowntimeIDByName(ctx context.Context, tx *sql.Tx, tenantID in
 		AND is_deleted = FALSE
 	`
 	err := tx.QueryRowContext(ctx, query, tenantID, downtimeName).Scan(&id)
-	fmt.Println("Get the Downtime ID", id)
+
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return 0, nil // Not found

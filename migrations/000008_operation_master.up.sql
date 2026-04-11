@@ -24,6 +24,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS uix_operation_active ON operation_master (tena
 WHERE
     is_deleted = FALSE;
 
+CONSTRAINT uix_operation_id_tenant UNIQUE (id, tenant_id);
+
 -- Trigger function (shared)
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$

@@ -35,21 +35,19 @@ func (ser *Service) CreateOperationWithDowntime(ctx context.Context, req Operati
 
 	// 1️⃣ Get or create operation
 	operationID, err := ser.OperationProvider.GetOperationIDByName(ctx, tx, claims.TenantID, opname)
-	fmt.Println("before error", operationID)
 
 	if err != nil {
 		return OperationDowntimeCreateResponse{}, err
 	}
-	fmt.Println("after error", operationID)
 
 	if operationID == 0 {
 		operationID, err = ser.OperationProvider.CreateOperation(ctx, tx, claims.TenantID, claims.UserID, opname)
+
 	}
 	if err != nil {
 		return OperationDowntimeCreateResponse{}, nil
 	}
 
-	fmt.Println("OperationID", operationID)
 	// 2. Deduplicate downtime name
 
 	uniqueMap := make(map[string]string) // normalized -> original
@@ -81,13 +79,14 @@ func (ser *Service) CreateOperationWithDowntime(ctx context.Context, req Operati
 		downTimeID, err := ser.DowntimeProvide.GetDowntimeIDByName(ctx, tx, claims.TenantID, downtimeName)
 
 		if err != nil {
+			fmt.Println(err)
 			skipped = append(skipped, downtimeName)
 			continue
 		}
 
 		// Create defect if it doesn't exist
 		if downTimeID == 0 {
-			fmt.Println(downTimeID)
+
 			downTimeID, err = ser.DowntimeProvide.CreateDowntime(ctx, tx, claims.TenantID, claims.UserID, downtimeName)
 			if err != nil || downTimeID == 0 {
 				skipped = append(skipped, downtimeName)

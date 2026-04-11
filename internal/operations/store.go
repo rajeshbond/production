@@ -85,24 +85,21 @@ func (s *Store) BulkCreateOperation(ctx context.Context, tx *sql.Tx, tenantID in
 func (s *Store) GetOperationIDByName(ctx context.Context, tx *sql.Tx, tenantID int64, operationName string) (int64, error) {
 	var id int64
 
-	fmt.Println("Opeartion Mame", operationName)
-
 	query := `
 		SELECT id 
 		from operation_master
 		WHERE tenant_id = $1
-		 AND LOWER(operation_name) = $2
+		 AND LOWER(operation_name) = LOWER($2)
 		 AND is_deleted = FALSE
 	`
 
 	if err := tx.QueryRowContext(ctx, query, tenantID, operationName).Scan(&id); err != nil {
+
 		if err == sql.ErrNoRows {
 			return 0, nil
 		}
-		fmt.Println("Errorr")
 		return 0, err
 	}
-	fmt.Println("Store Operation process id", id)
 	return id, nil
 }
 
