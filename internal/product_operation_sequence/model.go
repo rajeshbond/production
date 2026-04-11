@@ -2,7 +2,7 @@ package productoperationsequence
 
 import "time"
 
-type ProductionOperationSequence struct {
+type ProductOperationSequence struct {
 	ID          int64     `db:"id"`
 	TenantID    int64     `db:"tenant_id"`
 	ProductID   int64     `db:"product_id"`
