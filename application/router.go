@@ -17,6 +17,8 @@ import (
 	operationdowntimemap "github.com/rajesh_bond/production/internal/operation_downtime_map"
 	"github.com/rajesh_bond/production/internal/operations"
 	productoperationsequence "github.com/rajesh_bond/production/internal/product_operation_sequence"
+	"github.com/rajesh_bond/production/internal/products"
+	resourcetype "github.com/rajesh_bond/production/internal/resource_type"
 	shifttiming "github.com/rajesh_bond/production/internal/shift_timings"
 	tenant "github.com/rajesh_bond/production/internal/tenant"
 	tenantshifts "github.com/rajesh_bond/production/internal/tenant_shifts"
@@ -99,6 +101,11 @@ func NewRouter(app *App) http.Handler {
 
 	// Operation Downtime Map
 
+	// Product
+
+	productModule := products.NewModule(app.DB.SQLDB, tokenAuth)
+	r.Mount("/product", productModule.Router())
+
 	operationDowntimeMap := operationdowntimemap.NewModule(app.DB.SQLDB, tokenAuth, downtimeNodule.Store, operationModule.Store)
 	r.Mount("/mapopdt", operationDowntimeMap.Router())
 
@@ -110,6 +117,11 @@ func NewRouter(app *App) http.Handler {
 	// Users
 	usersModule := users.NewModule(app.DB.SQLDB, tokenAuth, userRoleModule.Service, tenantModule.Service)
 	r.Mount("/users", usersModule.Router())
+
+	// Resource Type
+
+	resourcetypeModule := resourcetype.NewModule(app.DB.SQLDB, tokenAuth)
+	r.Mount("/resty", resourcetypeModule.Router())
 
 	return r
 }

@@ -1,4 +1,4 @@
-package productoperationsequence
+package products
 
 import (
 	"net/http"
@@ -9,15 +9,15 @@ import (
 
 func (m *Module) Router() chi.Router {
 	r := chi.NewRouter()
-	r.Get("/pos", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("POS Test Ok"))
+	r.Get("/product", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Product Test Ok"))
 	})
 
 	r.Group(func(r chi.Router) {
 		r.Use(auth.Verifier(m.tokenAuth))
 		r.Use(auth.Authenticator(m.tokenAuth))
 		r.Use(auth.UserContextInjector)
-		r.Post("/posbulkcreate", m.Handler.BulkCreate)
+		r.Post("/createproduct", m.Handler.CreateProduct)
 
 	})
 
