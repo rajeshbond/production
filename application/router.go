@@ -18,6 +18,7 @@ import (
 	"github.com/rajesh_bond/production/internal/operations"
 	productoperationsequence "github.com/rajesh_bond/production/internal/product_operation_sequence"
 	"github.com/rajesh_bond/production/internal/products"
+	resourcemaster "github.com/rajesh_bond/production/internal/resource_master"
 	resourcetype "github.com/rajesh_bond/production/internal/resource_type"
 	shifttiming "github.com/rajesh_bond/production/internal/shift_timings"
 	tenant "github.com/rajesh_bond/production/internal/tenant"
@@ -122,6 +123,11 @@ func NewRouter(app *App) http.Handler {
 
 	resourcetypeModule := resourcetype.NewModule(app.DB.SQLDB, tokenAuth)
 	r.Mount("/resty", resourcetypeModule.Router())
+
+	// Resource Master
+
+	resourceMasterModule := resourcemaster.NewModule(app.DB.SQLDB, tokenAuth)
+	r.Mount("/resmaster", resourceMasterModule.Router())
 
 	return r
 }
