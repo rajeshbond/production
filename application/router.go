@@ -20,6 +20,7 @@ import (
 	"github.com/rajesh_bond/production/internal/products"
 	resourcemaster "github.com/rajesh_bond/production/internal/resource_master"
 	resourcetype "github.com/rajesh_bond/production/internal/resource_type"
+	shiftslot "github.com/rajesh_bond/production/internal/shift_slot"
 	shifttiming "github.com/rajesh_bond/production/internal/shift_timings"
 	tenant "github.com/rajesh_bond/production/internal/tenant"
 	tenantshifts "github.com/rajesh_bond/production/internal/tenant_shifts"
@@ -79,6 +80,11 @@ func NewRouter(app *App) http.Handler {
 
 	shiftTimingsModule := shifttiming.NewModule(app.DB, tokenAuth, tenantModule.Store)
 	r.Mount("/shifttiming", shiftTimingsModule.Router())
+
+	// shift_slots
+
+	shiftSlot := shiftslot.NewModule(app.DB.SQLDB, tokenAuth)
+	r.Mount("/shiftslot", shiftSlot.Router())
 
 	// Defect
 
