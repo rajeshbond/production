@@ -13,6 +13,7 @@ import (
 	"github.com/rajesh_bond/production/internal/defect"
 	downtime "github.com/rajesh_bond/production/internal/down_time.go"
 	internalsetup "github.com/rajesh_bond/production/internal/internal_setup"
+	"github.com/rajesh_bond/production/internal/machine"
 	operationdefectmap "github.com/rajesh_bond/production/internal/operation_defect_map"
 	operationdowntimemap "github.com/rajesh_bond/production/internal/operation_downtime_map"
 	"github.com/rajesh_bond/production/internal/operations"
@@ -92,6 +93,11 @@ func NewRouter(app *App) http.Handler {
 	r.Mount("/defect", defectModule.Router())
 
 	// Downtime
+
+	// Machine
+
+	machineModule := machine.NewModule(app.DB.SQLDB, tokenAuth)
+	r.Mount("/machine", machineModule.Router())
 
 	downtimeNodule := downtime.NewModule(app.DB.SQLDB, tokenAuth)
 	r.Mount("/downtime", downtimeNodule.Router())
