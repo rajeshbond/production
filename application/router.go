@@ -18,6 +18,7 @@ import (
 	operationdowntimemap "github.com/rajesh_bond/production/internal/operation_downtime_map"
 	"github.com/rajesh_bond/production/internal/operations"
 	productoperationsequence "github.com/rajesh_bond/production/internal/product_operation_sequence"
+	productiontarget "github.com/rajesh_bond/production/internal/production_target"
 	"github.com/rajesh_bond/production/internal/products"
 	resourcemaster "github.com/rajesh_bond/production/internal/resource_master"
 	resourcetype "github.com/rajesh_bond/production/internal/resource_type"
@@ -140,6 +141,11 @@ func NewRouter(app *App) http.Handler {
 
 	resourceMasterModule := resourcemaster.NewModule(app.DB.SQLDB, tokenAuth)
 	r.Mount("/resmaster", resourceMasterModule.Router())
+
+	// Production Target
+
+	productionTarget := productiontarget.NewModule(app.DB.SQLDB, tokenAuth)
+	r.Mount("/prodtrmap", productionTarget.Router())
 
 	return r
 }

@@ -45,12 +45,12 @@ func (s *Store) CreateProductionTarget(ctx context.Context, tx *sql.Tx, tenantID
 	signature := generateSignature(req.ResourceIDs)
 
 	query := `
-		INSERT INTO product_target (tenant_id,product_id,operation_id,machine_id,prcess_type,target_per_hour,expected_efficiency,resource_signature,created_by,updated_by)
+		INSERT INTO production_target (tenant_id,product_id,operation_id,machine_id,process_type,target_per_hour,expected_efficiency,resource_signature,created_by,updated_by)
 		VALUES($1	,$2,$3,$4,$5,$6,$7,$8,$9,$9)
 		RETURNING id;
 	`
 	var id int64
-
+	fmt.Println("Store Create Production Target")
 	err := tx.QueryRowContext(ctx, query,
 		tenantID,
 		req.ProductID,
@@ -64,9 +64,9 @@ func (s *Store) CreateProductionTarget(ctx context.Context, tx *sql.Tx, tenantID
 	).Scan(&id)
 
 	if err != nil {
-		return 0, nil
+		return 0, err
 	}
-
+	fmt.Println("ID:-", id)
 	// insert resource mapping
 
 	queryInsertResource := `
@@ -76,7 +76,8 @@ func (s *Store) CreateProductionTarget(ctx context.Context, tx *sql.Tx, tenantID
 	for _, rID := range req.ResourceIDs {
 		_, err := tx.ExecContext(ctx, queryInsertResource, tenantID, id, rID)
 		if err != nil {
-			return 0, nil
+			fmt.Print(err)
+			return 0, err
 		}
 
 	}

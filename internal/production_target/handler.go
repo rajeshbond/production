@@ -2,6 +2,7 @@ package productiontarget
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -46,6 +47,7 @@ func (h *Handler) CreateProductionTarget(w http.ResponseWriter, r *http.Request)
 	id, err := h.Service.CreateProductionTarget(ctx, &req, claims)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, response.InvalidRequestBody)
+		fmt.Println("Rajesh Bondgilwar")
 		return
 	}
 
