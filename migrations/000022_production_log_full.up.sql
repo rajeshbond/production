@@ -1,32 +1,59 @@
 -- =========================================
--- PRODUCTION LOG
+-- PRODUCTION LOG (WITH SLOT INDEX)
 -- =========================================
+
 
 CREATE TABLE IF NOT EXISTS production_log (
     id BIGSERIAL PRIMARY KEY,
+
     tenant_id BIGINT NOT NULL,
+
     machine_id BIGINT NOT NULL,
     product_id BIGINT NOT NULL,
     operation_id BIGINT NOT NULL,
+
     shift_hour_slot_id BIGINT NOT NULL,
+    slot_index INT NOT NULL, -- ✅ INCLUDED DIRECTLY
+
     quantity INT NOT NULL,
     remarks TEXT,
+
     created_by BIGINT,
     updated_by BIGINT,
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT fk_pl_tenant FOREIGN KEY (tenant_id) REFERENCES tenant (id) ON DELETE CASCADE,
-    CONSTRAINT fk_pl_machine FOREIGN KEY (machine_id) REFERENCES machine (id) ON DELETE CASCADE,
-    CONSTRAINT fk_pl_product FOREIGN KEY (product_id) REFERENCES product (id) ON DELETE CASCADE,
-    CONSTRAINT fk_pl_operation FOREIGN KEY (operation_id) REFERENCES operation_master (id) ON DELETE CASCADE,
-    CONSTRAINT fk_pl_slot FOREIGN KEY (shift_hour_slot_id) REFERENCES shift_hour_slot (id) ON DELETE CASCADE
+
+-- =========================
+-- 🔗 FOREIGN KEYS
+-- =========================
+
+CONSTRAINT fk_pl_tenant FOREIGN KEY (tenant_id) REFERENCES tenant (id) ON DELETE CASCADE,
+CONSTRAINT fk_pl_machine FOREIGN KEY (machine_id) REFERENCES machine (id) ON DELETE CASCADE,
+CONSTRAINT fk_pl_product FOREIGN KEY (product_id) REFERENCES product (id) ON DELETE CASCADE,
+CONSTRAINT fk_pl_operation FOREIGN KEY (operation_id) REFERENCES operation_master (id) ON DELETE CASCADE,
+CONSTRAINT fk_pl_slot FOREIGN KEY (shift_hour_slot_id) REFERENCES shift_hour_slot (id) ON DELETE CASCADE,
+
+-- =========================
+-- ✅ VALIDATION
+-- =========================
+
+CONSTRAINT chk_pl_quantity_positive
+        CHECK (quantity >= 0),
+
+    CONSTRAINT chk_pl_slot_index_positive
+        CHECK (slot_index > 0)
 );
 
--- ONE ENTRY PER MACHINE PER SLOT
+-- =========================================
+-- UNIQUE (STRICT SLOT CONTROL)
+-- =========================================
+
 CREATE UNIQUE INDEX uix_pl_unique_slot ON production_log (
     tenant_id,
     machine_id,
-    shift_hour_slot_id
+    shift_hour_slot_id,
+    slot_index
 );
 
 -- =========================================
@@ -90,3 +117,19 @@ CREATE TABLE IF NOT EXISTS production_log_downtime (
     CONSTRAINT fk_pldt_log FOREIGN KEY (production_log_id) REFERENCES production_log (id) ON DELETE CASCADE,
     CONSTRAINT fk_pldt_downtime FOREIGN KEY (downtime_id) REFERENCES downtime_master (id) ON DELETE CASCADE
 );
+
+-- =========================================
+-- INDEXES (PERFORMANCE)
+-- =========================================
+
+CREATE INDEX idx_pl_machine ON production_log (machine_id);
+
+CREATE INDEX idx_pl_slot ON production_log (shift_hour_slot_id);
+
+CREATE INDEX idx_pl_product_operation ON production_log (product_id, operation_id);
+
+CREATE INDEX idx_pld_log ON production_log_defect (production_log_id);
+
+CREATE INDEX idx_pldt_log ON production_log_downtime (production_log_id);
+
+CREATE INDEX idx_plr_log ON production_log_resource (production_log_id);
