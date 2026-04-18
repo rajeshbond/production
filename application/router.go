@@ -14,10 +14,12 @@ import (
 	downtime "github.com/rajesh_bond/production/internal/down_time.go"
 	internalsetup "github.com/rajesh_bond/production/internal/internal_setup"
 	"github.com/rajesh_bond/production/internal/machine"
+	"github.com/rajesh_bond/production/internal/mold"
 	operationdefectmap "github.com/rajesh_bond/production/internal/operation_defect_map"
 	operationdowntimemap "github.com/rajesh_bond/production/internal/operation_downtime_map"
 	"github.com/rajesh_bond/production/internal/operations"
 	productoperationsequence "github.com/rajesh_bond/production/internal/product_operation_sequence"
+	productionlog "github.com/rajesh_bond/production/internal/production_log"
 	productiontarget "github.com/rajesh_bond/production/internal/production_target"
 	"github.com/rajesh_bond/production/internal/products"
 	resourcemaster "github.com/rajesh_bond/production/internal/resource_master"
@@ -142,10 +144,19 @@ func NewRouter(app *App) http.Handler {
 	resourceMasterModule := resourcemaster.NewModule(app.DB.SQLDB, tokenAuth)
 	r.Mount("/resmaster", resourceMasterModule.Router())
 
+	// Mould
+
+	moldModule := mold.NewModule(app.DB.SQLDB, tokenAuth)
+	r.Mount("/mold", moldModule.Router())
+
 	// Production Target
 
 	productionTarget := productiontarget.NewModule(app.DB.SQLDB, tokenAuth)
 	r.Mount("/prodtrmap", productionTarget.Router())
+
+	// Production Log
+	productionLogModule := productionlog.NewModule(app.DB.SQLDB, tokenAuth)
+	r.Mount("/plog", productionLogModule.Router())
 
 	return r
 }

@@ -1,1 +1,0 @@
-DROP TABLE IF EXISTS production_target_resource_map CASCADE;
