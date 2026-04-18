@@ -19,8 +19,8 @@ func NewHandler(service *Service) *Handler {
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
-
-	var dto CreateUserRoleDTO
+	fmt.Println("INSEDE the hamdler")
+	var dto CreateRole
 
 	// Decode JSON safely
 	decoder := json.NewDecoder(r.Body)
@@ -52,10 +52,11 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Role:-", role)
 
 	if !auth.IsSuper(role) {
-		response.Error(w, http.StatusUnauthorized, "Yoar and not authorized")
+		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
+		return
 	}
 
-	createdRole, err := h.service.Create(ctx, dto)
+	createdRole, err := h.service.Create(ctx, dto, claims.UserID)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return

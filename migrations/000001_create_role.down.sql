@@ -1,3 +1,0 @@
--- DROP TABLE user_role
-
-DROP TABLE IF EXISTS user_role;

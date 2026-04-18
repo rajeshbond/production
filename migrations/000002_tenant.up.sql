@@ -8,20 +8,19 @@ CREATE TABLE IF NOT EXISTS tenant (
     tenant_code VARCHAR NOT NULL,
     address VARCHAR NOT NULL,
 
--- ✅ Contact person (primary)
+-- Contact
 contact_person_name VARCHAR(150),
 contact_phone VARCHAR(20),
 contact_email VARCHAR(150),
 is_verified BOOLEAN NOT NULL DEFAULT FALSE,
 is_active BOOLEAN NOT NULL DEFAULT TRUE,
 
--- ✅ Soft delete
+-- Soft delete
 is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 deleted_at TIMESTAMPTZ,
 deleted_by INTEGER,
 
--- ✅ Audit
-
+-- Audit
 
 created_by INTEGER,
     updated_by INTEGER,
@@ -31,10 +30,10 @@ created_by INTEGER,
 );
 
 -- =========================
--- TRIGGER FUNCTION (GLOBAL - create once)
+-- FUNCTION (CREATE ONCE)
 -- =========================
 
-CREATE OR REPLACE FUNCTION set_updated_at()
+CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
    NEW.updated_at = NOW();
@@ -46,28 +45,28 @@ $$ LANGUAGE plpgsql;
 -- TRIGGER
 -- =========================
 
-DROP TRIGGER IF EXISTS trg_set_updated_at ON tenant;
+DROP TRIGGER IF EXISTS trg_update_tenant_updated_at ON tenant;
 
-CREATE TRIGGER trg_set_updated_at
+CREATE TRIGGER trg_update_tenant_updated_at
 BEFORE UPDATE ON tenant
 FOR EACH ROW
-EXECUTE FUNCTION set_updated_at();
+EXECUTE FUNCTION update_updated_at_column();
 
 -- =========================
--- UNIQUE INDEX (ACTIVE ONLY)
+-- UNIQUE INDEXES (ACTIVE ONLY)
 -- =========================
 
 CREATE UNIQUE INDEX IF NOT EXISTS uix_tenant_code_active ON tenant (LOWER(tenant_code))
 WHERE
-    is_deleted = false;
+    is_deleted = FALSE;
 
--- Optional email uniqueness
 CREATE UNIQUE INDEX IF NOT EXISTS uix_tenant_contact_email_active ON tenant (LOWER(contact_email))
 WHERE
-    is_deleted = false
+    is_deleted = FALSE
     AND contact_email IS NOT NULL;
 
--- Performance index
-CREATE INDEX IF NOT EXISTS idx_tenant_active ON tenant (is_deleted, is_active);
--- Performance index
+-- =========================
+-- PERFORMANCE INDEX
+-- =========================
+
 CREATE INDEX IF NOT EXISTS idx_tenant_active ON tenant (is_deleted, is_active);

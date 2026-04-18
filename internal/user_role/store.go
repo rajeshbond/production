@@ -28,7 +28,7 @@ func NewStore(db *sql.DB) *Store {
 // Function Starts here -------
 
 // 1. Create
-func (s *Store) Create(ctx context.Context, dto CreateUserRoleDTO) (*UserRole, error) {
+func (s *Store) Create(ctx context.Context, dto CreateRole, userID int64) (*UserRole, error) {
 
 	query := `
 	INSERT INTO user_role (user_role, created_by, updated_by)
@@ -43,7 +43,7 @@ func (s *Store) Create(ctx context.Context, dto CreateUserRoleDTO) (*UserRole, e
 		ctx,
 		query,
 		strings.ToLower(dto.UserRole),
-		dto.CreatedBy).
+		userID).
 		Scan(&role.ID, &role.UserRole, &role.CreatedBy, &role.UpdatedBy, &role.CreatedAt, &role.UpdatedAt)
 
 	if err != nil {

@@ -17,7 +17,7 @@ func NewService(store *Store) *Service {
 
 func (s *Service) Create(
 	ctx context.Context,
-	dto CreateUserRoleDTO,
+	dto CreateRole, userID int64,
 ) (*UserRoleResponseDTO, error) {
 
 	fmt.Println("Service", dto)
@@ -39,7 +39,7 @@ func (s *Service) Create(
 	}
 
 	// role, err := s.store.Create(ctx, dto)
-	role, err := s.store.Create(ctx, dto)
+	role, err := s.store.Create(ctx, dto, userID)
 	if err != nil {
 		return nil, err
 	}

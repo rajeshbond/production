@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-func IsSuper(role string) bool {
-	return role == "admin" || role == "superadmin"
-}
+// func IsSuper(role string) bool {
+// 	return role == "admin" || role == "superadmin"
+// }
 
 func ValidateTenantAccess(role, claimsEmpID, reqEmpID string) error {
 
@@ -84,4 +84,18 @@ func TenantRoleCheck(role string) error {
 	default:
 		return nil
 	}
+}
+
+// Define Roles
+
+type Role string
+
+var superRoles = map[Role]struct{}{
+	RoleSuperAdmin: {},
+	RoleAdmin:      {},
+}
+
+func IsSuper(role string) bool {
+	_, exists := superRoles[Role(strings.ToLower(role))]
+	return exists
 }
