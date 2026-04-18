@@ -56,5 +56,5 @@ type UpdateTenantDTO struct {
 	ContactEmail      *string `json:"contact_email"`
 	Address           *string `json:"address"`
 	IsActive          *bool   `json:"is_active"`
-	UpdatedBy         *int64  `json:"updated_by"`
+	// UpdatedBy         *int64  `json:"updated_by"`
 }

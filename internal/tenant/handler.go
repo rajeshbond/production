@@ -84,7 +84,7 @@ func (h *Handler) CreateTenant(w http.ResponseWriter, r *http.Request) {
 
 	// Create tenant
 
-	tenant, err := h.service.CreateTenant(ctx, req)
+	tenant, err := h.service.CreateTenant(ctx, req, claims)
 	if err != nil {
 		response.Error(w, http.StatusBadRequest, err.Error())
 		return
@@ -131,7 +131,7 @@ func (h *Handler) VerifyTenant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := h.service.TenantVerifcation(ctx, req.TenantCode)
+	resp, err := h.service.TenantVerifcation(ctx, req.TenantCode, claims.UserID)
 
 	if err != nil {
 		response.Error(w, http.StatusBadRequest, err.Error())
@@ -219,15 +219,14 @@ func (h *Handler) UpdateTenant(w http.ResponseWriter, r *http.Request) {
 		req.ContactPhone == nil &&
 		req.ContactEmail == nil &&
 		req.Address == nil &&
-		req.IsActive == nil &&
-		req.UpdatedBy == nil {
+		req.IsActive == nil {
 
 		response.Error(w, http.StatusBadRequest, "At least one field is required")
 		return
 	}
 
 	// 4. Call service
-	updated, err := h.service.UpdateTenant(ctx, tenantCode, req)
+	updated, err := h.service.UpdateTenant(ctx, tenantCode, req, claims.UserID)
 	if err != nil {
 
 		switch {

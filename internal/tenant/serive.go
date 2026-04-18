@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rajesh_bond/production/internal/auth"
 	"github.com/rajesh_bond/production/internal/common/response"
 )
 
@@ -41,7 +42,7 @@ func NewService(store *Store) *Service {
 
 // 1. Create Tenant
 
-func (s *Service) CreateTenant(ctx context.Context, dto CreateTenantDTO) (*TenantResponse, error) {
+func (s *Service) CreateTenant(ctx context.Context, dto CreateTenantDTO, claim *auth.UserClaims) (*TenantResponse, error) {
 
 	// example Validate
 
@@ -69,7 +70,7 @@ func (s *Service) CreateTenant(ctx context.Context, dto CreateTenantDTO) (*Tenan
 
 	dto.TenantCode = strings.ToLower(dto.TenantCode)
 
-	tenant, err := s.store.Create(ctx, dto)
+	tenant, err := s.store.Create(ctx, dto, claim.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -99,8 +100,8 @@ func (s *Service) CreateSuperTenantTx(ctx context.Context, tx *sql.Tx, dto Creat
 		TenantName: dto.TenantName,
 		TenantCode: dto.TenantCode,
 		Address:    dto.Address,
-		CreatedBy:  int64(1),
-		UpdatedBy:  int64(1),
+		CreatedBy:  1,
+		UpdatedBy:  1,
 	}
 
 	return s.store.CreateSuperTenantTx(ctx, tx, req)
@@ -109,7 +110,7 @@ func (s *Service) CreateSuperTenantTx(ctx context.Context, tx *sql.Tx, dto Creat
 
 // 3. Tenant Verifcation toggle
 
-func (ser *Service) TenantVerifcation(ctx context.Context, tenantCode string) (string, error) {
+func (ser *Service) TenantVerifcation(ctx context.Context, tenantCode string, userID int64) (string, error) {
 
 	// Check the tenant code in the DB
 
@@ -139,7 +140,7 @@ func (ser *Service) TenantVerifcation(ctx context.Context, tenantCode string) (s
 		return TenantAlreadyVerifed, nil
 	}
 
-	TenantVerifed, err := ser.store.VerifyTenenat(ctx, tenantCode)
+	TenantVerifed, err := ser.store.VerifyTenenat(ctx, tenantCode, userID)
 
 	if err != nil {
 		return "Intenal server Error", err
@@ -191,7 +192,7 @@ func (ser *Service) DeleteTenant(ctx context.Context, tenantCode string, deleted
 
 // 5.Update Tenant
 
-func (ser *Service) UpdateTenant(ctx context.Context, tenantCode string, dto UpdateTenantDTO) (bool, error) {
+func (ser *Service) UpdateTenant(ctx context.Context, tenantCode string, dto UpdateTenantDTO, userID int64) (bool, error) {
 
 	// Normalize tenant code
 	tenantCode = strings.ToLower(strings.TrimSpace(tenantCode))
@@ -265,10 +266,10 @@ func (ser *Service) UpdateTenant(ctx context.Context, tenantCode string, dto Upd
 		}
 	}
 
-	if dto.UpdatedBy != nil {
-		existing.UpdatedBy = dto.UpdatedBy
-		isChanged = true
-	}
+	// if dto.UpdatedBy != nil {
+	// 	existing.UpdatedBy = dto.UpdatedBy
+	// 	isChanged = true
+	// }
 
 	// 3. No changes → skip DB
 	if !isChanged {
@@ -291,8 +292,8 @@ func (ser *Service) UpdateTenant(ctx context.Context, tenantCode string, dto Upd
 		IsVerified:        existing.IsVerified,
 		IsActive:          existing.IsActive,
 		IsDeleted:         existing.IsDeleted,
-		CreatedBy:         existing.CreatedBy,
-		UpdatedBy:         existing.UpdatedBy,
+		CreatedBy:         &userID,
+		UpdatedBy:         &userID,
 		CreatedAt:         existing.CreatedAt,
 		UpdatedAt:         existing.UpdatedAt,
 	}

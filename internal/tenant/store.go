@@ -44,7 +44,7 @@ func NewStore(db *sql.DB) *Store {
 
 // 1. Create Tenant by suer Admin or Admin
 
-func (s *Store) Create(ctx context.Context, dto CreateTenantDTO) (*Tenant, error) {
+func (s *Store) Create(ctx context.Context, dto CreateTenantDTO, userID int64) (*Tenant, error) {
 	query := `
 		INSERT INTO tenant (tenant_name, tenant_code, address,created_by,updated_by) 
 		VALUES ($1,$2,$3,$4,$4)
@@ -61,7 +61,7 @@ func (s *Store) Create(ctx context.Context, dto CreateTenantDTO) (*Tenant, error
 		dto.TenantName,
 		dto.TenantCode,
 		dto.Address,
-		dto.CreatedBy,
+		userID,
 	).Scan(
 		&t.ID,
 		&t.TenantName,
@@ -249,16 +249,18 @@ func (s *Store) TenantCodeInDB(ctx context.Context, tenantCode string) (bool, er
 }
 
 // 7. Tenant verification store function
-func (s *Store) VerifyTenenat(ctx context.Context, tenantCode string) (bool, error) {
+func (s *Store) VerifyTenenat(ctx context.Context, tenantCode string, userID int64) (bool, error) {
 
 	query := `
 	UPDATE tenant
-	SET is_verified = TRUE
+	SET is_verified = TRUE,
+	updated_by = $2,
+	updated_at = NOW()
 	WHERE LOWER(tenant_code) = LOWER($1)
   AND is_deleted = FALSE
 `
 
-	result, err := s.db.ExecContext(ctx, query, tenantCode)
+	result, err := s.db.ExecContext(ctx, query, tenantCode, userID)
 	if err != nil {
 		return false, err
 	}
