@@ -1,15 +1,15 @@
 package shifttiming
 
 type ShiftTimingDTO struct {
-	ShiftStart string `json:"shift_start" validate:"required,datetime=15:04"`
-	ShiftEnd   string `json:"shift_end" validate:"required,datetime=15:04"`
-	Weekday    int    `json:"weekday" validate:"required,min=1,max=7"`
+	ShiftStart string `json:"shift_start"`
+	ShiftEnd   string `json:"shift_end"`
+	Weekday    int    `json:"weekday"`
 }
 
 type CreateShiftDTO struct {
-	TenantCode string           `json:"tenant_code" validate:"required"`
-	ShiftName  string           `json:"shift_name" validate:"required"`
-	Timings    []ShiftTimingDTO `json:"timings" validate:"required,min=1,dive"`
+	TenantCode string           `json:"tenant_code"`
+	ShiftName  string           `json:"shift_name"`
+	Timings    []ShiftTimingDTO `json:"timings"`
 }
 
 type BulkCreateShiftRequest []CreateShiftDTO

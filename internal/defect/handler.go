@@ -2,6 +2,7 @@ package defect
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/jwtauth/v5"
@@ -33,10 +34,18 @@ func (h *Handler) CreateDefects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if claims.Role != "tenantadmin" {
+	fmt.Println(claims.Role)
+
+	if !auth.IsTenatAdminRole(claims.Role) {
+		fmt.Println("Inside the code")
 		response.Error(w, http.StatusForbidden, auth.ErrUnauthorized.Error())
 		return
 	}
+	fmt.Println(claims.RoleID)
+	// if claims.Role != "tenantadmin" {
+	// 	response.Error(w, http.StatusForbidden, auth.ErrUnauthorized.Error())
+	// 	return
+	// }
 
 	var req BulkCreateDefectRequest
 

@@ -2,7 +2,6 @@ package operations
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/jwtauth/v5"
@@ -31,7 +30,8 @@ func (h *Handler) CreateOperations(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusForbidden, auth.ErrForbidden.Error())
 		return
 	}
-	if claims.Role != "tenantadmin" {
+
+	if !auth.IsTenatAdminRole(claims.Role) {
 		response.Error(w, http.StatusForbidden, auth.ErrUnauthorized.Error())
 		return
 	}
@@ -46,8 +46,6 @@ func (h *Handler) CreateOperations(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	fmt.Println(req)
 
 	result, err := h.Service.CreateOperations(ctx, req, claims)
 

@@ -32,10 +32,15 @@ func (h *Handler) CreateDownTime(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if claims.Role != "tenantadmin" {
+	if !auth.IsTenatAdminRole(claims.Role) {
 		response.Error(w, http.StatusForbidden, auth.ErrUnauthorized.Error())
 		return
 	}
+
+	// if claims.Role != "tenantadmin" {
+	// 	response.Error(w, http.StatusForbidden, auth.ErrUnauthorized.Error())
+	// 	return
+	// }
 
 	var req BulkCreateDownTimeRequest
 

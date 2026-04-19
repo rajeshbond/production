@@ -102,9 +102,15 @@ func (ser *Service) CreateTenantAdmin(ctx context.Context, claims *auth.UserClai
 		return nil, err
 	}
 
-	if reqRole != "tenantadmin" {
+	// if reqRole != "tenantadmin" && reqRole != "tenantowner" {
+	// 	return nil, ErrOnlyTenantAdminCreate
+	// }
+
+	if !auth.IsTenatAdminRole(reqRole) {
 		return nil, ErrOnlyTenantAdminCreate
 	}
+
+	// continue normal flow
 
 	// Asining the Created and updated by to struct
 	req.CreatedBy = &claims.UserID
@@ -350,6 +356,7 @@ func (ser *Service) CheckTenantExist(ctx context.Context, tenantCode string) err
 // 7. Verify Tenant User
 func (s *Service) VerifyTenantUser(ctx context.Context, claims *auth.UserClaims, employeeID string, tenantID int64) error {
 
+	fmt.Println("Claims Role ", claims.Role)
 	user, err := s.Store.GetUserbyEmploeeID(ctx, employeeID, tenantID)
 	if err != nil {
 		return err
@@ -379,9 +386,9 @@ func (s *Service) VerifyTenantUser(ctx context.Context, claims *auth.UserClaims,
 
 	// ✅ Basic validation
 
-	if (claims.Role == "superadmin" || claims.Role == "admin") && (userRole == "tenantadmin") {
-
-		updated, err := s.Store.VerifyTenantUser(ctx, employeeID, tenantID)
+	if (claims.Role == "superadmin" || claims.Role == "admin") || (userRole == "tenantadmin" || claims.Role == "tenantowner") {
+		fmt.Println("tenant admin")
+		updated, err := s.Store.VerifyTenantUser(ctx, employeeID, tenantID, claims.UserID)
 		if err != nil {
 			return err
 		}
@@ -398,7 +405,7 @@ func (s *Service) VerifyTenantUser(ctx context.Context, claims *auth.UserClaims,
 		if claims.TenantID != user.TenantID {
 			return ErrTenantIDMismatched
 		}
-		updated, err := s.Store.VerifyTenantUser(ctx, employeeID, tenantID)
+		updated, err := s.Store.VerifyTenantUser(ctx, employeeID, tenantID, claims.UserID)
 		if err != nil {
 			return err
 		}

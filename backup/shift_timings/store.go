@@ -68,54 +68,32 @@ func (s *Store) GetExisttingTimings(ctx context.Context, tx *sql.Tx, tenantShift
 
 }
 
-func (s *Store) InsertShifttiming(
-	ctx context.Context,
-	tx *sql.Tx,
-	t ShiftTimingDTO,
-	shiftID int64,
-) (int64, error) {
+func (s *Store) InsertShifttiming(ctx context.Context, tx *sql.Tx, t ShiftTimingDTO, tenantShiftID int64, userID int64) (int64, error) {
 
-	res, err := tx.ExecContext(ctx, `
-		INSERT INTO tenant_shift_timing
-		(tenant_shift_id, weekday, shift_start, shift_end)
-		VALUES ($1,$2,$3,$4)
+	query := `
+		INSERT INTO shift_timing 
+		(tenant_shift_id, shift_start, shift_end, weekday, created_by, updated_by)
+		VALUES ($1,$2,$3,$4,$5,$6)
 		ON CONFLICT DO NOTHING
-	`, shiftID, t.Weekday, t.ShiftStart, t.ShiftEnd)
+	`
+	res, err := tx.ExecContext(ctx, query,
+		tenantShiftID,
+		t.ShiftStart,
+		t.ShiftEnd,
+		t.Weekday,
+		userID,
+		userID,
+	)
 
 	if err != nil {
 		return 0, err
 	}
 
 	rows, _ := res.RowsAffected()
+
 	return rows, nil
+
 }
-
-// func (s *Store) InsertShifttiming(ctx context.Context, tx *sql.Tx, t ShiftTimingDTO, tenantShiftID int64, userID int64) (int64, error) {
-
-// 	query := `
-// 		INSERT INTO shift_timing
-// 		(tenant_shift_id, shift_start, shift_end, weekday, created_by, updated_by)
-// 		VALUES ($1,$2,$3,$4,$5,$6)
-// 		ON CONFLICT DO NOTHING
-// 	`
-// 	res, err := tx.ExecContext(ctx, query,
-// 		tenantShiftID,
-// 		t.ShiftStart,
-// 		t.ShiftEnd,
-// 		t.Weekday,
-// 		userID,
-// 		userID,
-// 	)
-
-// 	if err != nil {
-// 		return 0, err
-// 	}
-
-// 	rows, _ := res.RowsAffected()
-
-// 	return rows, nil
-
-// }
 
 // type Store struct {
 // 	db *sql.DB

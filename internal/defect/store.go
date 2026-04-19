@@ -3,6 +3,7 @@ package defect
 import (
 	"context"
 	"database/sql"
+	"strings"
 
 	operationdefectmap "github.com/rajesh_bond/production/internal/operation_defect_map"
 )
@@ -34,7 +35,12 @@ func (s *Store) BulkCreateDefect(ctx context.Context, tx *sql.Tx, tenantID int64
 	for _, d := range defects {
 		// Step 1: check if exists
 		var existingID int64
-		err := tx.QueryRowContext(ctx, checkQuery, tenantID, d.DefectName).Scan(&existingID)
+		err := tx.QueryRowContext(
+			ctx,
+			checkQuery,
+			tenantID,
+			strings.ToLower(strings.TrimSpace(d.DefectName)),
+		).Scan(&existingID)
 		if err != nil && err != sql.ErrNoRows {
 			return results, err
 		}

@@ -425,35 +425,67 @@ func (s *Store) IsTenantExist(ctx context.Context, tennatCode string) (bool, err
 }
 
 // 9. Get Verify Tenant User
-func (s *Store) VerifyTenantUser(ctx context.Context, employeeID string, tenantID int64) (bool, error) {
+
+func (s *Store) VerifyTenantUser(ctx context.Context, employeeID string, tenantID, userID int64) (bool, error) {
 
 	query := `
 	UPDATE "user"
-	SET is_verified = true 
+	SET is_verified = true,
+	    updated_by = $3,
+	    updated_at = NOW()
 	WHERE employee_id = $1
-	AND tenant_id = $2
-	AND is_deleted = false
+	  AND tenant_id = $2
+	  AND is_deleted = false
 	`
 
-	result, err := s.db.ExecContext(ctx, query, employeeID, tenantID)
+	result, err := s.db.ExecContext(ctx, query, employeeID, tenantID, userID)
 	if err != nil {
 		return false, err
 	}
 
-	resultRowsAffected, err := result.RowsAffected()
+	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return false, nil
+		return false, err
 	}
 
-	// If no rows updated -> not found or already deleetd
-
-	if resultRowsAffected == 0 {
-		return false, err
+	if rowsAffected == 0 {
+		return false, nil // no rows updated
 	}
 
 	return true, nil
-
 }
+
+// func (s *Store) VerifyTenantUser(ctx context.Context, employeeID string, tenantID, userID int64) (bool, error) {
+
+// 	query := `
+// 	UPDATE "user"
+// 	SET is_verified = true
+// 	updated_by = $3,
+// 	updates_at = NOW(),
+// 	WHERE employee_id = $1
+// 	AND tenant_id = $2
+// 	AND is_deleted = false
+// 	`
+
+// 	result, err := s.db.ExecContext(ctx, query, employeeID, tenantID, userID)
+// 	if err != nil {
+// 		return false, err
+// 	}
+
+// 	resultRowsAffected, err := result.RowsAffected()
+// 	if err != nil {
+// 		return false, nil
+// 	}
+
+// 	// If no rows updated -> not found or already deleetd
+
+// 	if resultRowsAffected == 0 {
+// 		return false, err
+// 	}
+
+// 	return true, nil
+
+// }
 
 // 10. Get Verification Status
 func (s *Store) GetVerificationStatus(ctx context.Context, employeeID string, tenantID int64) (bool, bool, error) {

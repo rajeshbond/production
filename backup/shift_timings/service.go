@@ -3,6 +3,7 @@ package shifttiming
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/rajesh_bond/production/internal/auth"
 )
@@ -20,46 +21,33 @@ func NewService(store *Store, tenantProvider TenantProvider) *Service {
 	}
 }
 
-func (ser *Service) BulkCreateShift(
-	ctx context.Context,
-	req BulkCreateShiftRequest,
-	claims *auth.UserClaims,
-) (*BulkResult, error) {
-
-	if !auth.IsTenatAdminRole(claims.Role) {
-		return nil, ErrOnlyTenantAllowed
-	}
-
-	if err := req.ValidateSingleTenant(); err != nil {
-		return nil, err
-	}
-
-	tenantCode := req[0].TenantCode
-
-	tenantID, err := ser.TenantProvider.GetTenantIDByCode(ctx, tenantCode)
-	if err != nil {
-		return nil, err
-	}
+func (ser *Service) BulkCreateShift(ctx context.Context, req BulkCreateShiftRequest, claims *auth.UserClaims) (*BulkResult, error) {
 
 	tx, err := ser.Store.sqlDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
+
 	defer tx.Rollback()
 
 	insertCount := 0
 	skipCount := 0
 
 	for _, shift := range req {
-
-		tenantShiftID, err := ser.Store.CreateTenantShift(
-			ctx, tx, tenantID, shift.ShiftName, claims.UserID,
-		)
+		tenantID, err := ser.TenantProvider.GetTenantIDByCode(ctx, shift.TenantCode)
 		if err != nil {
 			return nil, err
 		}
 
-		dayIntervals := make(map[int][][2]int)
+		tenantShiftID, err := ser.Store.CreateTenantShift(ctx, tx, tenantID, shift.ShiftName, claims.UserID)
+		if err != nil {
+			return nil, err
+		}
+		existingMap, err := ser.Store.GetExisttingTimings(ctx, tx, tenantShiftID)
+		if err != nil {
+			return nil, err
+		}
+
 		dayTotal := make(map[int]int)
 
 		for _, t := range shift.Timings {
@@ -70,31 +58,24 @@ func (ser *Service) BulkCreateShift(
 			}
 
 			duration := end - start
+
 			if duration <= 0 {
 				duration += 1440
 			}
 
-			// ✅ 24 hr rule
 			if dayTotal[t.Weekday]+duration > 1440 {
-				return nil, fmt.Errorf("exceeds 24 hrs for weekday %d", t.Weekday)
+				return nil, fmt.Errorf("exeeds 24 hrs weekday %d ", t.Weekday)
 			}
 
-			// ✅ normalize overnight
-			s := start
-			e := end
-			if e <= s {
-				e += 1440
-			}
-
-			// ✅ overlap check
-			if isOverlapping(dayIntervals[t.Weekday], s, e) {
-				return nil, fmt.Errorf("overlapping shift on weekday %d", t.Weekday)
-			}
-
-			dayIntervals[t.Weekday] = append(dayIntervals[t.Weekday], [2]int{s, e})
 			dayTotal[t.Weekday] += duration
 
-			rows, err := ser.Store.InsertShifttiming(ctx, tx, t, tenantShiftID)
+			key := t.ShiftStart + "-" + t.ShiftEnd + strconv.Itoa(t.Weekday)
+
+			if existingMap[key] {
+				skipCount++
+				continue
+			}
+			rows, err := ser.Store.InsertShifttiming(ctx, tx, t, tenantShiftID, claims.UserID)
 			if err != nil {
 				return nil, err
 			}
@@ -105,7 +86,9 @@ func (ser *Service) BulkCreateShift(
 			}
 
 			insertCount++
+
 		}
+
 	}
 
 	if insertCount == 0 {
@@ -120,6 +103,7 @@ func (ser *Service) BulkCreateShift(
 		Inserted: insertCount,
 		Skipped:  skipCount,
 	}, nil
+
 }
 
 // func (ser *Service) CreateShiftTiming(ctx context.Context, req CreateShiftTimingRequest, claims *auth.UserClaims) ([]ShiftTimingResponse, error) {

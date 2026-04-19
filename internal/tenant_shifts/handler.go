@@ -31,6 +31,7 @@ func (h *Handler) CreateTenanthifts(w http.ResponseWriter, r *http.Request) {
 
 	if !ok {
 		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
+		return
 	}
 
 	// Decode request

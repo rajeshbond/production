@@ -1,2 +1,6 @@
-Run : - 
+
+1) Run : - 
   go run cmd/server/main.go
+2) Create Migration with name 
+  make create-migration name=user
+

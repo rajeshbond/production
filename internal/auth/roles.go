@@ -63,7 +63,7 @@ func ValidateTenantAccesswithTenantCode(role string, claimsTenantID, reqTenantID
 		// Full Access
 		return nil
 
-	case RoleTenantAdmin:
+	case RoleTenantAdmin, RoleTenantOwner:
 		// Restricted to own tenant
 		if claimsTenantID != reqTenantID {
 			fmt.Println("Rajesh failed ")
@@ -98,4 +98,15 @@ var superRoles = map[Role]struct{}{
 func IsSuper(role string) bool {
 	_, exists := superRoles[Role(strings.ToLower(role))]
 	return exists
+}
+
+func IsTenatAdminRole(reqRole string) bool {
+	allowedRoles := map[string]struct{}{
+		"tenantadmin": {},
+		"tenantowner": {},
+	}
+
+	_, ok := allowedRoles[reqRole]
+	fmt.Println("Bool value", ok)
+	return ok
 }

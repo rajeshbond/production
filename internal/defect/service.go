@@ -17,10 +17,6 @@ func NewService(store *Store) *Service {
 
 func (ser *Service) CreateDefects(ctx context.Context, req BulkCreateDefectRequest, claims *auth.UserClaims) (BulkDefectResult, error) {
 
-	if claims.Role != "tenantadmin" {
-		return BulkDefectResult{}, auth.ErrUnauthorized
-	}
-
 	tx, err := ser.Store.db.BeginTx(ctx, nil)
 
 	if err != nil {

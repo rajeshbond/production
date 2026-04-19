@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	operationdowntimemap "github.com/rajesh_bond/production/internal/operation_downtime_map"
 )
@@ -40,50 +41,106 @@ func (s *Store) CheckExistingDownTime(ctx context.Context, tx *sql.Tx, tenantID 
 
 }
 
-func (s *Store) BulkCreateDownTime(ctx context.Context, tx *sql.Tx, tenantID int64, userID int64, downtimes []CreateDowntimeRequest) (BulkDownTimeResult, error) {
+func (s *Store) BulkCreateDownTime(
+	ctx context.Context,
+	tx *sql.Tx,
+	tenantID int64,
+	userID int64,
+	downtimes []CreateDowntimeRequest,
+) (BulkDownTimeResult, error) {
 
 	insertQuery := `
-		INSERT INTO downtime (tenant_id,downtime_name,created_by,updated_by)
-		VALUES($1,$2,$3,$3)
-		RETURNING id,downtime_name
-	`
+        INSERT INTO downtime (tenant_id, downtime_name, created_by, updated_by)
+        VALUES ($1, $2, $3, $3)
+        RETURNING id, downtime_name
+    `
+
 	var result BulkDownTimeResult
 
 	for _, d := range downtimes {
 
-		// Step 1: Check if exists (using seperate function)
-		exists, _, err := s.CheckExistingDownTime(ctx, tx, tenantID, d.DowntimeName)
-		if err != nil {
-			return result, nil
-		}
+		// ✅ Normalize input
+		normalized := strings.ToLower(strings.TrimSpace(d.DowntimeName))
 
-		// Already Exisits
-		if exists {
-			result.Skipped = append(result.Skipped, d.DowntimeName)
+		// ✅ Skip empty after trim
+		if normalized == "" {
 			continue
 		}
 
-		// step 2: Insert if not exists
+		// Step 1: Check if exists
+		exists, _, err := s.CheckExistingDownTime(ctx, tx, tenantID, normalized)
+		if err != nil {
+			return result, err
+		}
 
+		if exists {
+			result.Skipped = append(result.Skipped, normalized)
+			continue
+		}
+
+		// Step 2: Insert
 		var res DownTimeResponse
 
 		err = tx.QueryRowContext(ctx, insertQuery,
 			tenantID,
-			d.DowntimeName,
+			normalized,
 			userID,
-		).Scan(&res.DowntimeName, &res.DowntimeName)
+		).Scan(&res.ID, &res.DowntimeName)
 
 		if err != nil {
 			return result, err
 		}
 
 		result.Inserted = append(result.Inserted, res)
-
 	}
 
 	return result, nil
-
 }
+
+// func (s *Store) BulkCreateDownTime(ctx context.Context, tx *sql.Tx, tenantID int64, userID int64, downtimes []CreateDowntimeRequest) (BulkDownTimeResult, error) {
+
+// 	insertQuery := `
+// 		INSERT INTO downtime (tenant_id,downtime_name,created_by,updated_by)
+// 		VALUES($1,$2,$3,$3)
+// 		RETURNING id,downtime_name
+// 	`
+// 	var result BulkDownTimeResult
+
+// 	for _, d := range downtimes {
+
+// 		// Step 1: Check if exists (using seperate function)
+// 		exists, _, err := s.CheckExistingDownTime(ctx, tx, tenantID, d.DowntimeName)
+// 		if err != nil {
+// 			return result, nil
+// 		}
+
+// 		// Already Exisits
+// 		if exists {
+// 			result.Skipped = append(result.Skipped, d.DowntimeName)
+// 			continue
+// 		}
+
+// 		// step 2: Insert if not exists
+
+// 		var res DownTimeResponse
+
+// 		err = tx.QueryRowContext(ctx, insertQuery,
+// 			tenantID,
+// 			strings.ToLower(d.DowntimeName),
+// 			userID,
+// 		).Scan(&res.DowntimeName, &res.DowntimeName)
+
+// 		if err != nil {
+// 			return result, err
+// 		}
+
+// 		result.Inserted = append(result.Inserted, res)
+
+// 	}
+
+// 	return result, nil
+
+// }
 
 func (s *Store) CreateDowntime(ctx context.Context, tx *sql.Tx, tenantID int64, userID int64, downtimeName string) (int64, error) {
 
