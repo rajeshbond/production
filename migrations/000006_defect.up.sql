@@ -2,6 +2,7 @@
 -- Create defect table (SaaS + Audit + Soft Delete)
 -- =========================================
 
+
 CREATE TABLE IF NOT EXISTS defect (
     id BIGSERIAL PRIMARY KEY,
     tenant_id BIGINT NOT NULL,
@@ -13,8 +14,14 @@ CREATE TABLE IF NOT EXISTS defect (
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at TIMESTAMPTZ,
     deleted_by BIGINT,
-    CONSTRAINT fk_defect_tenant FOREIGN KEY (tenant_id) REFERENCES tenant (id) ON DELETE CASCADE
-);
+
+    CONSTRAINT fk_defect_tenant 
+        FOREIGN KEY (tenant_id) 
+        REFERENCES tenant (id) 
+        ON DELETE CASCADE,
+
+-- ✅ REQUIRED for composite FK usage
+CONSTRAINT uix_defect_tenant_id UNIQUE (tenant_id, id) );
 
 -- =========================================
 -- Indexes (SaaS + Performance)
@@ -27,19 +34,12 @@ CREATE INDEX IF NOT EXISTS idx_defect_tenant ON defect (tenant_id);
 CREATE INDEX IF NOT EXISTS idx_defect_active ON defect (tenant_id, is_deleted);
 
 -- =========================================
--- Unique constraint (BEST PRACTICE)
--- Only enforce uniqueness for active records
+-- Unique constraint (active records only, case-insensitive)
 -- =========================================
 
-DROP INDEX IF EXISTS uix_defect_active;
-
-CREATE UNIQUE INDEX uix_defect_active ON defect (tenant_id, LOWER(defect_name))
+CREATE UNIQUE INDEX IF NOT EXISTS uix_defect_active ON defect (tenant_id, LOWER(defect_name))
 WHERE
     is_deleted = FALSE;
-
--- CREATE UNIQUE INDEX IF NOT EXISTS uix_defect_active ON defect (tenant_id, defect_name)
--- WHERE
---     is_deleted = FALSE;
 
 -- =========================================
 -- Function: auto-update updated_at

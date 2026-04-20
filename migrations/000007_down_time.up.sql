@@ -2,6 +2,7 @@
 -- DOWNTIME
 -- =========================================
 
+
 CREATE TABLE IF NOT EXISTS downtime (
     id BIGSERIAL PRIMARY KEY,
     tenant_id BIGINT NOT NULL,
@@ -13,13 +14,25 @@ CREATE TABLE IF NOT EXISTS downtime (
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_at TIMESTAMPTZ,
     deleted_by BIGINT,
-    CONSTRAINT fk_downtime_tenant FOREIGN KEY (tenant_id) REFERENCES tenant (id) ON DELETE CASCADE
-);
 
+    CONSTRAINT fk_downtime_tenant 
+        FOREIGN KEY (tenant_id) 
+        REFERENCES tenant (id) 
+        ON DELETE CASCADE,
+
+-- ✅ REQUIRED for composite FK (VERY IMPORTANT)
+CONSTRAINT uix_downtime_tenant_id UNIQUE (tenant_id, id) );
+
+-- =========================================
 -- Index
+-- =========================================
+
 CREATE INDEX IF NOT EXISTS idx_downtime_tenant ON downtime (tenant_id);
 
--- Unique (active only)
+-- =========================================
+-- Unique (active only, case-insensitive)
+-- =========================================
+
 CREATE UNIQUE INDEX IF NOT EXISTS uix_downtime_active ON downtime (
     tenant_id,
     LOWER(downtime_name)
@@ -27,7 +40,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS uix_downtime_active ON downtime (
 WHERE
     is_deleted = FALSE;
 
+-- =========================================
 -- Trigger
+-- =========================================
+
 DROP TRIGGER IF EXISTS trg_update_downtime_updated_at ON downtime;
 
 CREATE TRIGGER trg_update_downtime_updated_at

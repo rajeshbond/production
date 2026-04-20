@@ -3,6 +3,7 @@ package defect
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 
 	operationdefectmap "github.com/rajesh_bond/production/internal/operation_defect_map"
@@ -67,7 +68,7 @@ func (s *Store) BulkCreateDefect(ctx context.Context, tx *sql.Tx, tenantID int64
 
 func (s *Store) GetDefectIDByName(ctx context.Context, tx *sql.Tx, tenantID int64, defectName string) (int64, error) {
 	var id int64
-
+	fmt.Println("Inside GetDefectIDByName", defectName)
 	query := `
 		SELECT id
 		FROM defect
@@ -114,10 +115,13 @@ func (s *Store) CreateDefects(ctx context.Context, tx *sql.Tx, tenantID int64, u
 }
 
 func (s *Store) CreateDefect(ctx context.Context, tx *sql.Tx, tenantID int64, userID int64, defectName string) (int64, error) {
+
 	query := `
 		INSERT INTO defect(tenant_id,defect_name,created_by,updated_by)
 		VALUES($1,$2,$3,$3)
-		ON CONFLICT (tenant_id,defect_name) DO NOTHING
+		ON CONFLICT (tenant_id,LOWER(defect_name))
+		WHERE is_deleted = FALSE
+		DO NOTHING
 		RETURNING id
 	`
 	var id int64

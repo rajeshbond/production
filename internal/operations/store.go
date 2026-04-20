@@ -3,7 +3,6 @@ package operations
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	operationdefectmap "github.com/rajesh_bond/production/internal/operation_defect_map"
 	operationdowntimemap "github.com/rajesh_bond/production/internal/operation_downtime_map"
@@ -103,25 +102,78 @@ func (s *Store) GetOperationIDByName(ctx context.Context, tx *sql.Tx, tenantID i
 	return id, nil
 }
 
-func (s *Store) CreateOperation(ctx context.Context, tx *sql.Tx, tenantID int64, userID int64, operationName string) (int64, error) {
+func (s *Store) CreateOperation(
+	ctx context.Context,
+	tx *sql.Tx,
+	tenantID int64,
+	userID int64,
+	operationName string,
+) (int64, error) {
+
 	var id int64
-	fmt.Println("Inside create operation of store")
+
 	query := `
-		INSERT INTO operation_master ( tenant_id, operation_name,created_by,updated_by)
-		VALUES($1,$2,$3,$3)
-		ON CONFLICT (tenant_id,operation_name) DO NOTHING
+		INSERT INTO operation_master (
+			tenant_id, operation_name, created_by, updated_by
+		)
+		VALUES ($1,$2,$3,$3)
+		ON CONFLICT DO NOTHING
 		RETURNING id
 	`
 
-	if err := tx.QueryRowContext(ctx, query, tenantID, operationName, userID).Scan(&id); err != nil {
+	err := tx.QueryRowContext(ctx, query, tenantID, operationName, userID).Scan(&id)
+
+	if err == sql.ErrNoRows {
+		// Already exists → fetch existing id
+		err = tx.QueryRowContext(ctx, `
+			SELECT id
+			FROM operation_master
+			WHERE tenant_id = $1
+			  AND operation_name = $2
+			  AND is_deleted = FALSE
+		`, tenantID, operationName).Scan(&id)
+	}
+
+	if err != nil {
 		return 0, err
 	}
 
-	fmt.Println("store ID", id)
-
 	return id, nil
-
 }
+
+// func (s *Store) CreateOperation(ctx context.Context, tx *sql.Tx, tenantID int64, userID int64, operationName string) (int64, error) {
+// 	var id int64
+// 	fmt.Println("Inside create operation of store")
+// 	query := `
+// 		INSERT INTO operation_master ( tenant_id, operation_name,created_by,updated_by)
+// 		VALUES($1,$2,$3,$3)
+// 		ON CONFLICT (tenant_id,operation_name,is_deleted=FALSE) DO NOTHING
+// 		RETURNING id
+// 	`
+// 	err := tx.QueryRowContext(ctx, query, tenantID, operationName, userID).Scan(&id)
+
+// 	if err == sql.ErrNoRows {
+// 		// already exists → get id manually
+// 		err = tx.QueryRowContext(ctx, `
+//         SELECT id FROM operation_master
+//         WHERE tenant_id = $1
+//           AND operation_name = $2
+//           AND is_deleted = FALSE
+//     `, tenantID, operationName).Scan(&id)
+// 	}
+
+// 	if err != nil {
+// 		return 0, err
+// 	}
+// 	// if err := tx.QueryRowContext(ctx, query, tenantID, operationName, userID).Scan(&id); err != nil {
+// 	// 	return 0, err
+// 	// }
+
+// 	// fmt.Println("store ID", id)
+
+// 	return id, nil
+
+// }
 
 var _ operationdefectmap.OperationProvider = (*Store)(nil)
 

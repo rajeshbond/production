@@ -2,7 +2,6 @@ package operationdowntimemap
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/rajesh_bond/production/internal/auth"
@@ -26,10 +25,15 @@ func (h *Handler) CreateOperationWithDowntime(w http.ResponseWriter, r *http.Req
 		return
 
 	}
-	if claims.Role != "tenantadmin" {
-		response.Error(w, http.StatusForbidden, "only tenantadmin allowed")
+
+	if !auth.IsTenatAdminRole(claims.Role) {
+		response.Error(w, http.StatusForbidden, response.NotAuthorized)
 		return
 	}
+	// if claims.Role != "tenantadmin" {
+	// 	response.Error(w, http.StatusForbidden, "only tenantadmin allowed")
+	// 	return
+	// }
 
 	var req OperationDowntimeCreateRequest
 
@@ -37,8 +41,6 @@ func (h *Handler) CreateOperationWithDowntime(w http.ResponseWriter, r *http.Req
 		response.Error(w, http.StatusBadRequest, response.InvalidRequest)
 		return
 	}
-
-	fmt.Println("req", req)
 
 	resp, err := h.Service.CreateOperationWithDowntime(ctx, req, claims)
 	if err != nil {

@@ -2,7 +2,6 @@ package operationdefectmap
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/rajesh_bond/production/internal/auth"
@@ -74,7 +73,6 @@ func (s *Service) CreateOperationWithDefect(
 
 	// 3️⃣ Process each defect
 	for _, defectName := range cleanedDefects {
-
 		// Get defect ID
 		defectID, err := s.defectProvide.GetDefectIDByName(ctx, tx, claims.TenantID, defectName)
 		if err != nil {
@@ -122,10 +120,6 @@ func (s *Service) CreateOperationWithDefect(
 		// Only append to inserted if defect exists and mapping succeeded
 
 	}
-
-	fmt.Println("Skipped", skipped)
-
-	fmt.Println("Add duplicate ", duplicateInputs)
 
 	// 4️⃣ Add duplicates to skipped
 	skipped = append(skipped, duplicateInputs...)

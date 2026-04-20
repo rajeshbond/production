@@ -27,6 +27,7 @@ func (h *Handler) CreateOperations(w http.ResponseWriter, r *http.Request) {
 
 	claims, ok := auth.GetUserClaimsFromContext(ctx)
 	if !ok {
+
 		response.Error(w, http.StatusForbidden, auth.ErrForbidden.Error())
 		return
 	}

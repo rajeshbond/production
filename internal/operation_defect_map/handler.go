@@ -2,7 +2,6 @@ package operationdefectmap
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/rajesh_bond/production/internal/auth"
@@ -20,7 +19,7 @@ func NewHandler(service *Service) *Handler {
 func (h *Handler) CreateOperationWithDefect(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	fmt.Println("Rajesh Bondgilwar")
+	// fmt.Println("Rajesh Bondgilwar")
 
 	claims, ok := auth.GetUserClaimsFromContext(ctx)
 	if !ok {
@@ -33,10 +32,16 @@ func (h *Handler) CreateOperationWithDefect(w http.ResponseWriter, r *http.Reque
 		response.Error(w, http.StatusBadRequest, response.InvalidRequest)
 		return
 	}
-	if claims.Role != "tenantadmin" {
-		response.Error(w, http.StatusForbidden, "only tenantadmin allowed")
+
+	if !auth.IsTenatAdminRole(claims.Role) {
+		response.Error(w, http.StatusForbidden, response.NotAuthorized)
 		return
 	}
+
+	// if claims.Role != "tenantadmin" {
+	// 	response.Error(w, http.StatusForbidden, "only tenantadmin allowed")
+	// 	return
+	// }
 
 	resp, err := h.Service.CreateOperationWithDefect(ctx, req, *claims)
 

@@ -45,7 +45,7 @@ func (ser *Service) CreateOperationWithDowntime(ctx context.Context, req Operati
 
 	}
 	if err != nil {
-		return OperationDowntimeCreateResponse{}, nil
+		return OperationDowntimeCreateResponse{}, err
 	}
 
 	// 2. Deduplicate downtime name
