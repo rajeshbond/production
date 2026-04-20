@@ -28,7 +28,6 @@ CREATE INDEX IF NOT EXISTS idx_shift_tenant_weekday ON shift_timing (tenant_shif
 
 -- =========================================
 -- FUNCTION: update_updated_at
--- (only create once globally ideally)
 -- =========================================
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -51,7 +50,6 @@ DECLARE
     existing_start INT;
     existing_end INT;
 BEGIN
-    -- Convert NEW shift to minutes
     new_start := EXTRACT(HOUR FROM NEW.shift_start) * 60 
                + EXTRACT(MINUTE FROM NEW.shift_start);
 
@@ -67,6 +65,7 @@ BEGIN
         SELECT 
             EXTRACT(HOUR FROM st.shift_start) * 60 
           + EXTRACT(MINUTE FROM st.shift_start),
+
             CASE 
                 WHEN st.shift_end <= st.shift_start THEN
                     EXTRACT(HOUR FROM st.shift_end) * 60 
@@ -78,7 +77,9 @@ BEGIN
         FROM shift_timing st
         JOIN tenant_shift ts ON ts.id = st.tenant_shift_id
         WHERE ts.tenant_id = (
-            SELECT tenant_id FROM tenant_shift WHERE id = NEW.tenant_shift_id
+            SELECT tenant_id 
+            FROM tenant_shift 
+            WHERE id = NEW.tenant_shift_id
         )
         AND st.weekday = NEW.weekday
         AND st.id <> COALESCE(NEW.id, 0)
@@ -93,10 +94,18 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- =========================================
--- TRIGGERS
+-- TRIGGERS (IMPORTANT FIX)
 -- =========================================
 
--- Overlap trigger
+-- ✅ tenant_shift trigger (THIS WAS MISSING FIX)
+DROP TRIGGER IF EXISTS trg_update_tenant_shift_updated_at ON tenant_shift;
+
+CREATE TRIGGER trg_update_tenant_shift_updated_at
+BEFORE UPDATE ON tenant_shift
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+-- ✅ overlap trigger
 DROP TRIGGER IF EXISTS trg_check_shift_overlap ON shift_timing;
 
 CREATE TRIGGER trg_check_shift_overlap
@@ -104,7 +113,7 @@ BEFORE INSERT OR UPDATE ON shift_timing
 FOR EACH ROW
 EXECUTE FUNCTION check_shift_overlap();
 
--- Updated_at trigger
+-- ✅ updated_at trigger
 DROP TRIGGER IF EXISTS trg_update_shift_timing_updated_at ON shift_timing;
 
 CREATE TRIGGER trg_update_shift_timing_updated_at

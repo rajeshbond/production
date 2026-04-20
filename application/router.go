@@ -24,6 +24,7 @@ import (
 	"github.com/rajesh_bond/production/internal/products"
 	resourcemaster "github.com/rajesh_bond/production/internal/resource_master"
 	resourcetype "github.com/rajesh_bond/production/internal/resource_type"
+	"github.com/rajesh_bond/production/internal/shift"
 	shiftslot "github.com/rajesh_bond/production/internal/shift_slot"
 	shifttiming "github.com/rajesh_bond/production/internal/shift_timings"
 	tenant "github.com/rajesh_bond/production/internal/tenant"
@@ -84,6 +85,11 @@ func NewRouter(app *App) http.Handler {
 
 	shiftTimingsModule := shifttiming.NewModule(app.DB, tokenAuth, tenantModule.Store)
 	r.Mount("/shifttiming", shiftTimingsModule.Router())
+
+	// Shift
+
+	shiftModule := shift.NewModule(app.DB.SQLDB, tokenAuth)
+	r.Mount("/shift", shiftModule.Router())
 
 	// shift_slots
 
