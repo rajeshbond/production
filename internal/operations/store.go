@@ -3,6 +3,7 @@ package operations
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	operationdefectmap "github.com/rajesh_bond/production/internal/operation_defect_map"
 	operationdowntimemap "github.com/rajesh_bond/production/internal/operation_downtime_map"
@@ -135,8 +136,11 @@ func (s *Store) CreateOperation(
 	}
 
 	if err != nil {
+		fmt.Println(err)
 		return 0, err
 	}
+
+	fmt.Println("operation ID Returning the ID :-----> ", id)
 
 	return id, nil
 }

@@ -2,7 +2,6 @@ package operationdowntimemap
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/rajesh_bond/production/internal/auth"
@@ -38,8 +37,8 @@ func (ser *Service) CreateOperationWithDowntime(ctx context.Context, req Operati
 
 	if err != nil {
 		return OperationDowntimeCreateResponse{}, err
-	}
 
+	}
 	if operationID == 0 {
 		operationID, err = ser.OperationProvider.CreateOperation(ctx, tx, claims.TenantID, claims.UserID, opname)
 
@@ -79,11 +78,9 @@ func (ser *Service) CreateOperationWithDowntime(ctx context.Context, req Operati
 		downTimeID, err := ser.DowntimeProvide.GetDowntimeIDByName(ctx, tx, claims.TenantID, downtimeName)
 
 		if err != nil {
-			fmt.Println(err)
 			skipped = append(skipped, downtimeName)
 			continue
 		}
-
 		// Create defect if it doesn't exist
 		if downTimeID == 0 {
 

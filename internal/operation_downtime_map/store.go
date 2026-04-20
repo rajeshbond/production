@@ -30,9 +30,9 @@ func (s *Store) InsertOperationDowntimeMap(ctx context.Context, tx *sql.Tx, tena
 		if err == sql.ErrNoRows {
 			return 0, nil
 		}
+
 		return 0, err
 	}
-
 	return id, nil
 }
 

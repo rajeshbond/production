@@ -165,7 +165,7 @@ func (s *Store) CreateDowntime(ctx context.Context, tx *sql.Tx, tenantID int64, 
 
 func (s *Store) GetDowntimeIDByName(ctx context.Context, tx *sql.Tx, tenantID int64, downtimeName string) (int64, error) {
 	var id int64
-
+	// fmt.Print("Inside get Downtime ------------>", downtimeName)
 	query := `
 		SELECT id 
 		FROM downtime
