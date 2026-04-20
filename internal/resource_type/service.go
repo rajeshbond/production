@@ -25,3 +25,5 @@ func (ser *Service) UpdateResourceType(ctx context.Context, req UpdateResourceTy
 func (ser *Service) DeleteResourceType(ctx context.Context, id int64, claims *auth.UserClaims) (int64, error) {
 	return ser.Store.DeleteResourceType(ctx, claims.TenantID, claims.UserID, id)
 }
+
+
