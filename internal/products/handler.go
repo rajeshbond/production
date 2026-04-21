@@ -30,10 +30,15 @@ func (h *Handler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusForbidden, auth.ErrForbidden.Error())
 		return
 	}
-	if claims.Role != "tenantadmin" {
+
+	if !auth.IsTenatAdminRole(claims.Role) {
 		response.Error(w, http.StatusForbidden, auth.ErrUnauthorized.Error())
 		return
 	}
+	// if claims.Role != "tenantadmin" {
+	// 	response.Error(w, http.StatusForbidden, auth.ErrUnauthorized.Error())
+	// 	return
+	// }
 
 	var req CreateProductRequest
 
@@ -62,12 +67,17 @@ func (h *Handler) GetProductByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if claims.Role != "tenantadmin" {
-		if claims.Role != "tenantadmin" {
-			response.Error(w, http.StatusForbidden, auth.ErrUnauthorized.Error())
-			return
-		}
+	if !auth.IsTenatAdminRole(claims.Role) {
+		response.Error(w, http.StatusForbidden, auth.ErrUnauthorized.Error())
+		return
 	}
+
+	// if claims.Role != "tenantadmin" {
+	// 	if claims.Role != "tenantadmin" {
+	// 		response.Error(w, http.StatusForbidden, auth.ErrUnauthorized.Error())
+	// 		return
+	// 	}
+	// }
 
 	idStr := r.URL.Query().Get("id")
 	productID, _ := strconv.ParseInt(idStr, 10, 64)

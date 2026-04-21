@@ -17,6 +17,7 @@ import (
 	"github.com/rajesh_bond/production/internal/mold"
 	operationdefectmap "github.com/rajesh_bond/production/internal/operation_defect_map"
 	operationdowntimemap "github.com/rajesh_bond/production/internal/operation_downtime_map"
+	operationmode "github.com/rajesh_bond/production/internal/operation_mode"
 	"github.com/rajesh_bond/production/internal/operations"
 	productoperationsequence "github.com/rajesh_bond/production/internal/product_operation_sequence"
 	productionlog "github.com/rajesh_bond/production/internal/production_log"
@@ -115,6 +116,11 @@ func NewRouter(app *App) http.Handler {
 
 	operationModule := operations.NewModule(app.DB.SQLDB, tokenAuth)
 	r.Mount("/operations", operationModule.Router())
+
+	// Operation mode
+
+	operationModeModule := operationmode.NewModule(app.DB.SQLDB, tokenAuth)
+	r.Mount("/opmode", operationModeModule.Router())
 
 	// Operation Defect Map
 

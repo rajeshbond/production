@@ -30,10 +30,15 @@ func (h *Handler) CreateResourceType(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusForbidden, auth.ErrForbidden.Error())
 		return
 	}
-	if claims.Role != "tenantadmin" {
+
+	if !auth.IsTenatAdminRole(claims.Role) {
 		response.Error(w, http.StatusForbidden, auth.ErrUnauthorized.Error())
 		return
 	}
+	// if claims.Role != "tenantadmin" {
+	// 	response.Error(w, http.StatusForbidden, auth.ErrUnauthorized.Error())
+	// 	return
+	// }
 	var req CreateResourceTypeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		response.Error(w, http.StatusBadRequest, err.Error())
