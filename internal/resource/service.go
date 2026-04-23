@@ -28,16 +28,14 @@ func (ser *Service) Create(ctx context.Context, req *CreateResourceRequest, clai
 	}()
 
 	r := Resource{
-		TenantID:     claims.TenantID,
-		ResourceCode: req.ResourceCode,
-		ResourceName: req.ResourceName,
-		ResourceType: req.ResourceType,
-		Description:  req.Description,
-		MoldID:       req.MoldID,
-		FixtureID:    req.FixtureID,
-		ToolID:       req.ToolID,
-		CreatedBy:    &claims.UserID,
-		UpdatedBy:    &claims.UserID,
+		ResourceSubID: req.ResourceSubID,
+		TenantID:      claims.TenantID,
+		ResourceCode:  req.ResourceCode,
+		ResourceName:  req.ResourceName,
+		ResourceType:  req.ResourceType,
+		Description:   req.Description,
+		CreatedBy:     &claims.UserID,
+		UpdatedBy:     &claims.UserID,
 	}
 
 	id, err := ser.Store.Create(ctx, tx, &r)

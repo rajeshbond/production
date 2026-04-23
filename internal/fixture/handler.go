@@ -47,7 +47,7 @@ func (h *Handler) CreateFixture(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := h.Service.Create(ctx, &req, claims)
+	id, err := h.Service.Create(ctx, req, claims)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return

@@ -6,7 +6,7 @@ type Mold struct {
 	ID           int64   `db:"id"`
 	TenantID     int64   `db:"tenant_id"`
 	Type         string  `db:"type"`
-	MoldName     string  `db:"mold_name"`
+	MoldName     *string `db:"mold_name"`
 	MoldNo       string  `db:"mold_no"`
 	Description  *string `db:"description"`
 	Cavities     int     `db:"cavities"`

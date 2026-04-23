@@ -3,16 +3,17 @@ package resource
 import "time"
 
 type Resource struct {
-	ID           int64   `db:"id"`
-	TenantID     int64   `db:"tenant_id"`
-	ResourceCode string  `db:"resource_code"`
-	ResourceName *string `db:"resource_name"`
-	ResourceType string  `db:"resource_type"`
-	Description  *string `db:"description"`
+	ID            int64   `db:"id"`
+	TenantID      int64   `db:"tenant_id"`
+	ResourceSubID int64   `db:"resource_sub_id"`
+	ResourceCode  string  `db:"resource_code"`
+	ResourceName  *string `db:"resource_name"`
+	ResourceType  string  `db:"resource_type"`
+	Description   *string `db:"description"`
 
-	MoldID    *int64 `db:"mold_id"`
-	FixtureID *int64 `db:"fixture_id"`
-	ToolID    *int64 `db:"tool_id"`
+	// MoldID    *int64 `db:"mold_id"`
+	// FixtureID *int64 `db:"fixture_id"`
+	// ToolID    *int64 `db:"tool_id"`
 
 	IsActive bool `db:"is_active"`
 

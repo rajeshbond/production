@@ -1,35 +1,22 @@
 -- =========================================
--- RESOURCE TABLE
+-- RESOURCE TABLE (MASTER ONLY)
 -- =========================================
-
 
 CREATE TABLE IF NOT EXISTS resource (
     id BIGSERIAL PRIMARY KEY,
-
     tenant_id BIGINT NOT NULL,
-
+    resource_sub_id BIGINT NOT NULL,
     resource_code TEXT NOT NULL,
     resource_name TEXT,
-    resource_type TEXT NOT NULL,  -- MOLD / FIXTURE / TOOL
-
+    resource_type TEXT NOT NULL, -- MOLD / FIXTURE / TOOL
     description TEXT,
-
--- optional mapping
-
-mold_id BIGINT,
-    fixture_id BIGINT,
-    tool_id BIGINT,
-
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
-
     created_by BIGINT,
     updated_by BIGINT,
     deleted_by BIGINT,
-
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMPTZ,
-
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
@@ -39,7 +26,8 @@ mold_id BIGINT,
 
 CREATE UNIQUE INDEX IF NOT EXISTS uix_resource_active ON resource (
     tenant_id,
-    LOWER(resource_code)
+    LOWER(resource_code),
+    resource_sub_id
 )
 WHERE
     is_deleted = FALSE;
@@ -57,22 +45,7 @@ WHERE
     is_deleted = FALSE;
 
 -- =========================================
--- FOREIGN KEYS
--- =========================================
-
-ALTER TABLE resource
-ADD CONSTRAINT fk_resource_mold FOREIGN KEY (mold_id) REFERENCES mold (id) ON DELETE CASCADE;
-
-ALTER TABLE resource
-ADD CONSTRAINT fk_resource_fixture FOREIGN KEY (fixture_id) REFERENCES fixture (id) ON DELETE CASCADE;
-
--- Optional (if tool table exists)
--- ALTER TABLE resource
--- ADD CONSTRAINT fk_resource_tool
--- FOREIGN KEY (tool_id) REFERENCES tool(id) ON DELETE CASCADE;
-
--- =========================================
--- UPDATED_AT TRIGGER
+-- UPDATED_AT FUNCTION
 -- =========================================
 
 CREATE OR REPLACE FUNCTION update_resource_updated_at()
@@ -82,6 +55,10 @@ BEGIN
    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- =========================================
+-- TRIGGER
+-- =========================================
 
 DROP TRIGGER IF EXISTS trigger_resource_updated_at ON resource;
 

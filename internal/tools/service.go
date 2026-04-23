@@ -2,16 +2,19 @@ package tools
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/rajesh_bond/production/internal/auth"
 )
 
 type Service struct {
-	Store *Store
+	Store            *Store
+	ResourceProvider ResourceProvider
 }
 
-func NewService(store *Store) *Service {
-	return &Service{Store: store}
+func NewService(store *Store, resourcePointer ResourceProvider) *Service {
+	return &Service{Store: store, ResourceProvider: resourcePointer}
 }
 
 func (ser *Service) Create(ctx context.Context, req *CreateToolRequest, claims *auth.UserClaims) (int64, error) {
@@ -30,10 +33,10 @@ func (ser *Service) Create(ctx context.Context, req *CreateToolRequest, claims *
 			_ = tx.Rollback()
 		}
 	}()
-
+	typeName := strings.ToLower(req.Type)
 	t := Tool{
 		TenantID:    claims.TenantID,
-		Type:        req.Type,
+		Type:        typeName,
 		ToolCode:    req.ToolCode,
 		ToolName:    req.ToolName,
 		Description: req.Description,
@@ -51,9 +54,26 @@ func (ser *Service) Create(ctx context.Context, req *CreateToolRequest, claims *
 		return 0, err
 	}
 
+	// 🔥 Create Resource (IMPORTANT: check error)
+	_, err = ser.ResourceProvider.CreateResource(
+		ctx,
+		tx,
+		id,
+		claims.TenantID,
+		claims.UserID,
+		req.ToolCode,
+		req.ToolName,
+		typeName,
+		*req.Description,
+	)
+	if err != nil {
+		return 0, err
+	}
+
 	// ✅ COMMIT TRANSACTION
 	err = tx.Commit()
 	if err != nil {
+		fmt.Println(err)
 		return 0, err
 	}
 

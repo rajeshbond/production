@@ -1,16 +1,19 @@
 package mould
 
 import (
+	"context"
+	"strings"
+
 	"github.com/rajesh_bond/production/internal/auth"
-	"golang.org/x/net/context"
 )
 
 type Service struct {
-	Store *Store
+	Store            *Store
+	ResourceProvider ResourceProvider
 }
 
-func NewService(store *Store) *Service {
-	return &Service{Store: store}
+func NewService(store *Store, resourceProvider ResourceProvider) *Service {
+	return &Service{Store: store, ResourceProvider: resourceProvider}
 }
 
 func (ser *Service) Create(ctx context.Context, req *CreateMoldRequest, claims *auth.UserClaims) (int64, error) {
@@ -29,12 +32,13 @@ func (ser *Service) Create(ctx context.Context, req *CreateMoldRequest, claims *
 			_ = tx.Rollback()
 		}
 	}()
-
+	typeString := strings.ToLower(req.Type)
 	m := Mold{
 		TenantID:    claims.TenantID, // ✅ IMPORTANT
-		Type:        req.Type,
+		Type:        typeString,
 		MoldNo:      req.MoldNo,
-		Description: nil,
+		MoldName:    &req.MoldName,
+		Description: &req.Description,
 		Cavities:    req.Cavities,
 		TargetShots: req.TargetShots,
 		CreatedBy:   &claims.UserID,
@@ -47,6 +51,12 @@ func (ser *Service) Create(ctx context.Context, req *CreateMoldRequest, claims *
 	}
 
 	id, err := ser.Store.Create(ctx, tx, &m)
+	if err != nil {
+		return 0, err
+	}
+
+	_, err = ser.ResourceProvider.CreateResource(ctx, tx, id, claims.TenantID, claims.UserID, req.MoldNo, req.MoldName, typeString, req.Description)
+
 	if err != nil {
 		return 0, err
 	}

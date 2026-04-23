@@ -16,7 +16,6 @@ Handler Index
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -193,7 +192,6 @@ func (h *Handler) VerifyTenantUser(w http.ResponseWriter, r *http.Request) {
 
 	claims, ok := auth.GetUserClaimsFromContext(ctx)
 	if !ok {
-		fmt.Println("Rajesh Bondgilwar")
 		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
 		return
 	}

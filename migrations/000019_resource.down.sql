@@ -1,20 +1,14 @@
 -- =========================================
--- DROP TRIGGER & FUNCTION
+-- DROP TRIGGER
 -- =========================================
 
 DROP TRIGGER IF EXISTS trigger_resource_updated_at ON resource;
 
+-- =========================================
+-- DROP FUNCTION
+-- =========================================
+
 DROP FUNCTION IF EXISTS update_resource_updated_at;
-
--- =========================================
--- DROP FOREIGN KEYS
--- =========================================
-
-ALTER TABLE resource DROP CONSTRAINT IF EXISTS fk_resource_mold;
-
-ALTER TABLE resource DROP CONSTRAINT IF EXISTS fk_resource_fixture;
-
-ALTER TABLE resource DROP CONSTRAINT IF EXISTS fk_resource_tool;
 
 -- =========================================
 -- DROP INDEXES

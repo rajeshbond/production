@@ -158,6 +158,11 @@ func NewRouter(app *App) http.Handler {
 	resourceMasterModule := resourcemaster.NewModule(app.DB.SQLDB, tokenAuth)
 	r.Mount("/resmaster", resourceMasterModule.Router())
 
+	// Resource
+
+	resourceModule := resource.NewModule(app.DB.SQLDB, tokenAuth)
+	r.Mount("/resource", resourceModule.Router())
+
 	// Mould
 
 	moldModule := mold.NewModule(app.DB.SQLDB, tokenAuth)
@@ -165,23 +170,23 @@ func NewRouter(app *App) http.Handler {
 
 	// New
 
-	mouldModule := mould.NewModule(app.DB.SQLDB, tokenAuth)
+	mouldModule := mould.NewModule(app.DB.SQLDB, tokenAuth, resourceModule.Store)
 	r.Mount("/mould", mouldModule.Router())
 
 	// Fixture
 
-	fixtureModule := fixture.NewModule(app.DB.SQLDB, tokenAuth)
+	fixtureModule := fixture.NewModule(app.DB.SQLDB, tokenAuth, resourceModule.Store)
 	r.Mount("/fixture", fixtureModule.Router())
 
 	// Tools
 
-	toolsModule := tools.NewModule(app.DB.SQLDB, tokenAuth)
+	toolsModule := tools.NewModule(app.DB.SQLDB, tokenAuth, resourceModule.Store)
 	r.Mount("/tools", toolsModule.Router())
 
-	// Resource
+	// // Resource
 
-	resourceModule := resource.NewModule(app.DB.SQLDB, tokenAuth)
-	r.Mount("/resource", resourceModule.Router())
+	// resourceModule := resource.NewModule(app.DB.SQLDB, tokenAuth)
+	// r.Mount("/resource", resourceModule.Router())
 
 	// Production Target
 

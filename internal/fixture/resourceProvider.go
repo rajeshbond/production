@@ -1,4 +1,4 @@
-package mould
+package fixture
 
 import (
 	"context"
