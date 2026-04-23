@@ -12,9 +12,11 @@ import (
 	"github.com/rajesh_bond/production/cmd/service"
 	"github.com/rajesh_bond/production/internal/defect"
 	downtime "github.com/rajesh_bond/production/internal/down_time.go"
+	"github.com/rajesh_bond/production/internal/fixture"
 	internalsetup "github.com/rajesh_bond/production/internal/internal_setup"
 	"github.com/rajesh_bond/production/internal/machine"
 	"github.com/rajesh_bond/production/internal/mold"
+	"github.com/rajesh_bond/production/internal/mould"
 	operationdefectmap "github.com/rajesh_bond/production/internal/operation_defect_map"
 	operationdowntimemap "github.com/rajesh_bond/production/internal/operation_downtime_map"
 	operationmode "github.com/rajesh_bond/production/internal/operation_mode"
@@ -23,6 +25,7 @@ import (
 	productionlog "github.com/rajesh_bond/production/internal/production_log"
 	productiontarget "github.com/rajesh_bond/production/internal/production_target"
 	"github.com/rajesh_bond/production/internal/products"
+	"github.com/rajesh_bond/production/internal/resource"
 	resourcemaster "github.com/rajesh_bond/production/internal/resource_master"
 	resourcetype "github.com/rajesh_bond/production/internal/resource_type"
 	"github.com/rajesh_bond/production/internal/shift"
@@ -30,6 +33,7 @@ import (
 	shifttiming "github.com/rajesh_bond/production/internal/shift_timings"
 	tenant "github.com/rajesh_bond/production/internal/tenant"
 	tenantshifts "github.com/rajesh_bond/production/internal/tenant_shifts"
+	"github.com/rajesh_bond/production/internal/tools"
 	userrole "github.com/rajesh_bond/production/internal/user_role"
 	users "github.com/rajesh_bond/production/internal/users"
 
@@ -127,8 +131,6 @@ func NewRouter(app *App) http.Handler {
 	operationDefectMap := operationdefectmap.NewModule(app.DB.SQLDB, tokenAuth, defectModule.Store, operationModule.Store)
 	r.Mount("/opdefmap", operationDefectMap.Router())
 
-	// Operation Downtime Map
-
 	// Product
 
 	productModule := products.NewModule(app.DB.SQLDB, tokenAuth)
@@ -160,6 +162,26 @@ func NewRouter(app *App) http.Handler {
 
 	moldModule := mold.NewModule(app.DB.SQLDB, tokenAuth)
 	r.Mount("/mold", moldModule.Router())
+
+	// New
+
+	mouldModule := mould.NewModule(app.DB.SQLDB, tokenAuth)
+	r.Mount("/mould", mouldModule.Router())
+
+	// Fixture
+
+	fixtureModule := fixture.NewModule(app.DB.SQLDB, tokenAuth)
+	r.Mount("/fixture", fixtureModule.Router())
+
+	// Tools
+
+	toolsModule := tools.NewModule(app.DB.SQLDB, tokenAuth)
+	r.Mount("/tools", toolsModule.Router())
+
+	// Resource
+
+	resourceModule := resource.NewModule(app.DB.SQLDB, tokenAuth)
+	r.Mount("/resource", resourceModule.Router())
 
 	// Production Target
 
