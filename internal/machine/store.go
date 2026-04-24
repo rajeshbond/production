@@ -14,34 +14,66 @@ func NewStore(db *sql.DB) *Store {
 	return &Store{db: db}
 }
 
-// 1.Create
-func (s *Store) Create(ctx context.Context, tx *sql.Tx, m *Machine) error {
+func (s *Store) Create(ctx context.Context, tx *sql.Tx, m *Machine) (int64, error) {
+
 	query := `
-	INSERT INTO machine
-	(tenant_id, machine_code, machine_name, description, capacity, created_by, updated_by)
-	VALUES ($1,$2,$3,$4,$5,$6,$6)
-
-	ON CONFLICT (tenant_id, machine_code)
-	WHERE is_deleted = FALSE
-	DO UPDATE SET
-	    machine_name = EXCLUDED.machine_name,
-	    description  = EXCLUDED.description,
-	    capacity     = EXCLUDED.capacity,
-	    updated_by   = EXCLUDED.updated_by,
-	    updated_at   = NOW()
-
-	RETURNING id, created_at, updated_at
+	INSERT INTO machine(
+		tenant_id,
+		machine_code,
+		machine_name,
+		description,
+		capacity,
+		special_notes,
+		created_by,
+		updated_by
+	)
+	VALUES($1,$2,$3,$4,$5,$6,$7,$7)
+	RETURNING id;
 	`
-	return tx.QueryRowContext(ctx, query,
+
+	var id int64
+
+	err := tx.QueryRowContext(ctx, query,
 		m.TenantID,
 		m.MachineCode,
 		m.MachineName,
 		m.Description,
 		m.Capacity,
+		m.SpecialNotes,
 		m.CreatedBy,
-	).Scan(&m.ID, &m.CreatedAt, &m.UpdatedAt)
+	).Scan(&id)
 
+	return id, err
 }
+
+// 1.Create
+// func (s *Store) Create(ctx context.Context, tx *sql.Tx, m *Machine) error {
+// 	query := `
+// 	INSERT INTO machine
+// 	(tenant_id, machine_code, machine_name, description, capacity, created_by, updated_by)
+// 	VALUES ($1,$2,$3,$4,$5,$6,$6)
+
+// 	ON CONFLICT (tenant_id, machine_code)
+// 	WHERE is_deleted = FALSE
+// 	DO UPDATE SET
+// 	    machine_name = EXCLUDED.machine_name,
+// 	    description  = EXCLUDED.description,
+// 	    capacity     = EXCLUDED.capacity,
+// 	    updated_by   = EXCLUDED.updated_by,
+// 	    updated_at   = NOW()
+
+// 	RETURNING id, created_at, updated_at
+// 	`
+// 	return tx.QueryRowContext(ctx, query,
+// 		m.TenantID,
+// 		m.MachineCode,
+// 		m.MachineName,
+// 		m.Description,
+// 		m.Capacity,
+// 		m.CreatedBy,
+// 	).Scan(&m.ID, &m.CreatedAt, &m.UpdatedAt)
+
+// }
 
 // 2.Update
 

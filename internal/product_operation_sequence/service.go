@@ -12,11 +12,7 @@ func NewService(store *Store) *Service {
 	return &Service{Store: store}
 }
 
-func (s *Service) Create(
-	ctx context.Context,
-	tenantID, userID int64,
-	req CreateProductOperationRequest,
-) (*ProductOperationResponse, error) {
+func (s *Service) Create(ctx context.Context, tenantID, userID int64, req CreateProductOperationRequest) (*ProductOperationResponse, error) {
 
 	tx, err := s.Store.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -64,11 +60,7 @@ func (s *Service) Create(
 
 //
 
-func (s *Service) BulkCreate(
-	ctx context.Context,
-	tenantID, userID int64,
-	req BulkCreateProductOperationRequest,
-) ([]ProductOperationResponse, error) {
+func (s *Service) BulkCreate(ctx context.Context, tenantID, userID int64, req BulkCreateProductOperationRequest) ([]ProductOperationResponse, error) {
 
 	tx, err := s.Store.db.BeginTx(ctx, nil)
 	if err != nil {

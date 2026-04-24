@@ -19,7 +19,6 @@ func NewHandler(service *Service) *Handler {
 func (h *Handler) CreateOperationWithDefect(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// fmt.Println("Rajesh Bondgilwar")
 
 	claims, ok := auth.GetUserClaimsFromContext(ctx)
 	if !ok {

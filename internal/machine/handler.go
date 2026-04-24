@@ -36,7 +36,7 @@ func (h *Handler) CreateMachine(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println(claims.Role)
 
-	if claims.Role != "tenantadmin" {
+	if !auth.IsTenatAdminRole(claims.Role) {
 		response.Error(w, http.StatusForbidden, response.NotAuthorized)
 		return
 	}
@@ -44,7 +44,7 @@ func (h *Handler) CreateMachine(w http.ResponseWriter, r *http.Request) {
 	var req CreateMachineRequest
 	json.NewDecoder(r.Body).Decode(&req)
 
-	res, err := h.Service.CreateMachine(ctx, req, claims)
+	res, err := h.Service.Create(ctx, &req, claims.TenantID, claims.UserID)
 	if err != nil {
 		response.Error(w, 500, err.Error())
 		return

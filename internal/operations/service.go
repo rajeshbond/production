@@ -46,3 +46,7 @@ func (ser *Service) CreateOperations(ctx context.Context, req BulkCreateOperatio
 	return result, nil
 
 }
+
+func (ser *Service) GetAllOpeationByTenant(ctx context.Context, tenantID int64) ([]OperationResponse, error) {
+	return ser.Store.GetAllOpeationByTenant(ctx, tenantID)
+}

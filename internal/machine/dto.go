@@ -1,10 +1,13 @@
 package machine
 
+import "encoding/json"
+
 type CreateMachineRequest struct {
-	MachineCode string  `json:"machine_code" validate:"required"`
-	MachineName string  `json:"machine_name" validate:"required"`
-	Description *string `json:"description"`
-	Capacity    *string `json:"capacity"`
+	MachineCode  string          `json:"machine_code" validate:"required"`
+	MachineName  string          `json:"machine_name" validate:"required"`
+	Description  *string         `json:"description"`
+	Capacity     *string         `json:"capacity"`
+	SpecialNotes json.RawMessage `json:"special_notes"`
 }
 
 type UpdateMachineRequest struct {

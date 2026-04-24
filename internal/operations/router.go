@@ -18,6 +18,7 @@ func (m *Module) Router() chi.Router {
 		r.Use(auth.Authenticator(m.tokenAuth))
 		r.Use(auth.UserContextInjector)
 		r.Post("/createoperation", m.Handler.CreateOperations)
+		r.Get("/{tenant_id}/operations", m.Handler.GetAllOperation)
 
 	})
 

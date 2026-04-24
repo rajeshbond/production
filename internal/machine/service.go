@@ -2,6 +2,8 @@ package machine
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/rajesh_bond/production/internal/auth"
 )
@@ -16,35 +18,74 @@ func NewService(store *Store) *Service {
 
 // Create Machine
 
-func (ser *Service) CreateMachine(ctx context.Context, req CreateMachineRequest, claims *auth.UserClaims) (*MachineResponse, error) {
-	tx, _ := ser.Store.db.BeginTx(ctx, nil)
+func (s *Service) Create(ctx context.Context, req *CreateMachineRequest, tenantID int64, userID int64) (int64, error) {
+
+	tx, err := s.Store.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	notes, err := json.Marshal(req.SpecialNotes)
+	fmt.Println("------------->", string(notes))
+	if err != nil {
+		return 0, err
+	}
 
 	m := &Machine{
-		TenantID:    claims.TenantID,
-		MachineCode: req.MachineCode,
-		MachineName: req.MachineName,
-		Description: req.Description,
-		Capacity:    req.Capacity,
-		CreatedBy:   &claims.UserID,
+		TenantID:     tenantID,
+		MachineCode:  req.MachineCode,
+		MachineName:  req.MachineName,
+		Description:  req.Description,
+		Capacity:     req.Capacity,
+		SpecialNotes: notes,
+		CreatedBy:    &userID,
+		UpdatedBy:    &userID,
 	}
 
-	err := ser.Store.Create(ctx, tx, m)
+	id, err := s.Store.Create(ctx, tx, m)
 	if err != nil {
-		tx.Rollback()
-		return nil, err
+		return 0, err
 	}
 
-	tx.Commit()
-
-	return &MachineResponse{
-		ID:          m.ID,
-		MachineCode: m.MachineCode,
-		MachineName: m.MachineName,
-		Description: m.Description,
-		Capacity:    m.Capacity,
-	}, nil
-
+	err = tx.Commit()
+	return id, err
 }
+
+// func (ser *Service) CreateMachine(ctx context.Context, req CreateMachineRequest, claims *auth.UserClaims) (*MachineResponse, error) {
+// 	tx, _ := ser.Store.db.BeginTx(ctx, nil)
+
+// 	m := &Machine{
+// 		TenantID:    claims.TenantID,
+// 		MachineCode: req.MachineCode,
+// 		MachineName: req.MachineName,
+// 		Description: req.Description,
+// 		Capacity:    req.Capacity,
+// 		CreatedBy:   &claims.UserID,
+// 	}
+
+// 	err := ser.Store.Create(ctx, tx, m)
+// 	if err != nil {
+// 		tx.Rollback()
+// 		return nil, err
+// 	}
+
+// 	tx.Commit()
+
+// 	return &MachineResponse{
+// 		ID:          m.ID,
+// 		MachineCode: m.MachineCode,
+// 		MachineName: m.MachineName,
+// 		Description: m.Description,
+// 		Capacity:    m.Capacity,
+// 	}, nil
+
+// }
 
 // Update Machine ID
 

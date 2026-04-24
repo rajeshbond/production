@@ -145,6 +145,35 @@ func (s *Store) CreateOperation(
 	return id, nil
 }
 
+func (s *Store) GetAllOpeationByTenant(ctx context.Context, tenantID int64) ([]OperationResponse, error) {
+	query := `
+		SELECT id, operation_name FROM operation_master
+		WHERE tenant_id = $1
+		AND is_deleted = FALSE;
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var operations []OperationResponse
+
+	for rows.Next() {
+		var op OperationResponse
+		if err := rows.Scan(&op.ID, &op.OperationName); err != nil {
+			return nil, err
+		}
+
+		operations = append(operations, op)
+	}
+
+	return operations, nil
+
+}
+
 // func (s *Store) CreateOperation(ctx context.Context, tx *sql.Tx, tenantID int64, userID int64, operationName string) (int64, error) {
 // 	var id int64
 // 	fmt.Println("Inside create operation of store")
