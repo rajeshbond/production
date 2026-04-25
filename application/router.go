@@ -28,6 +28,7 @@ import (
 	"github.com/rajesh_bond/production/internal/resource"
 	resourcemaster "github.com/rajesh_bond/production/internal/resource_master"
 	resourcetype "github.com/rajesh_bond/production/internal/resource_type"
+	"github.com/rajesh_bond/production/internal/setupoperation"
 	"github.com/rajesh_bond/production/internal/shift"
 	shiftslot "github.com/rajesh_bond/production/internal/shift_slot"
 	shifttiming "github.com/rajesh_bond/production/internal/shift_timings"
@@ -187,6 +188,11 @@ func NewRouter(app *App) http.Handler {
 
 	// resourceModule := resource.NewModule(app.DB.SQLDB, tokenAuth)
 	// r.Mount("/resource", resourceModule.Router())
+
+	// Setup Operation
+
+	setupOperstionModule := setupoperation.NewModule(app.DB.SQLDB, tokenAuth)
+	r.Mount("/setops", setupOperstionModule.Router())
 
 	// Production Target
 
