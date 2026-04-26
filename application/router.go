@@ -21,6 +21,7 @@ import (
 	operationdowntimemap "github.com/rajesh_bond/production/internal/operation_downtime_map"
 	operationmode "github.com/rajesh_bond/production/internal/operation_mode"
 	"github.com/rajesh_bond/production/internal/operations"
+	prodlog "github.com/rajesh_bond/production/internal/prod_log"
 	productoperationsequence "github.com/rajesh_bond/production/internal/product_operation_sequence"
 	productionlog "github.com/rajesh_bond/production/internal/production_log"
 	productiontarget "github.com/rajesh_bond/production/internal/production_target"
@@ -198,6 +199,11 @@ func NewRouter(app *App) http.Handler {
 
 	productionTarget := productiontarget.NewModule(app.DB.SQLDB, tokenAuth)
 	r.Mount("/prodtrmap", productionTarget.Router())
+
+	// prod- log
+
+	prodLogModule := prodlog.NewModule(app.DB.SQLDB, tokenAuth)
+	r.Mount("/log", prodLogModule.Router())
 
 	// Production Log
 	productionLogModule := productionlog.NewModule(app.DB.SQLDB, tokenAuth)
