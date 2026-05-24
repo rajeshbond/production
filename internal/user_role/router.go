@@ -38,6 +38,7 @@ func (m *Module) Router() chi.Router {
 		r.Use(auth.UserContextInjector)
 		// Create User role
 		r.Post("/createrole", m.Handler.Create)
+		r.Get("/{roleIDstr}", m.Handler.GetUserRoleId)
 		r.Post("/test", m.Handler.TestRole1)
 	})
 

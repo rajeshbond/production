@@ -20,7 +20,7 @@ func ValidateTenantAccess(role, claimsEmpID, reqEmpID string) error {
 	}
 
 	// ✅ Tenant Admin → restricted
-	if role == "tenantadmin" {
+	if role == "tenantadmin" || role == "tenantowner" {
 
 		claimsTcode, err := Tcode(claimsEmpID)
 		if err != nil {
@@ -79,7 +79,7 @@ func ValidateTenantAccesswithTenantCode(role string, claimsTenantID, reqTenantID
 
 func TenantRoleCheck(role string) error {
 	switch role {
-	case "superadmin", "admin", "tenantadmin":
+	case "superadmin", "admin", "tenantadmin", "tenantowner":
 		return fmt.Errorf("not allowed to create admin role")
 	default:
 		return nil
@@ -101,6 +101,7 @@ func IsSuper(role string) bool {
 }
 
 func IsTenatAdminRole(reqRole string) bool {
+	fmt.Print("Inside isTenanat Admin ", reqRole)
 	allowedRoles := map[string]struct{}{
 		"tenantadmin": {},
 		"tenantowner": {},

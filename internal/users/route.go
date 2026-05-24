@@ -30,6 +30,8 @@ func (m *Module) Router() chi.Router {
 		r.Post("/ctenatuser", m.Handler.CreateTenantUser)
 		r.Patch("/verifyuser", m.Handler.VerifyTenantUser)
 		r.Delete("/deleteuser/{tenant_id}/user/{employee_id}", m.Handler.DeleteTenantUser)
+		r.Get("/unverifieduser", m.Handler.GetUnVerifiedTenantUser)
+		r.Get("/allusers", m.Handler.GetAllTenantUsers)
 
 	})
 	return r

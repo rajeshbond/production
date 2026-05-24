@@ -257,6 +257,7 @@ func (s *Service) CreateSuperUserTx(ctx context.Context, tx *sql.Tx, tenantID in
 // 4. Create Tenant User
 func (s *Service) CreateTenantUser(ctx context.Context, claims *auth.UserClaims, req *UserCreateRequest) (*CreateUserResponse, error) {
 
+	fmt.Println("User data----->", req)
 	// Basic validation
 	if strings.TrimSpace(req.EmployeeID) == "" {
 		return nil, ErrEmployeeIDReqyured
@@ -491,4 +492,25 @@ func (ser *Service) DeleteTenantUser(ctx context.Context, claims *auth.UserClaim
 
 	return ErrUnauthorized
 
+}
+
+// 9. Get UnVerified Tenant User
+func (ser *Service) GetUnVerifiedTenantUser(ctx context.Context, claims *auth.UserClaims) ([]User, error) {
+
+	if claims.TenantID == 0 {
+		return nil, errors.New("tenant_id is required")
+	}
+
+	return ser.Store.GetUnVerifiedUsersByTenantID(ctx, claims.TenantID)
+
+}
+
+// Get All Tenant Users
+func (ser *Service) GetAllTenantUsers(ctx context.Context, claims *auth.UserClaims) ([]User, error) {
+
+	if claims.TenantID == 0 {
+		return nil, errors.New("tenant_id is required")
+	}
+
+	return ser.Store.GetUsersByTenantID(ctx, claims.TenantID)
 }

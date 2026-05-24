@@ -16,6 +16,7 @@ Handler Index
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -94,6 +95,7 @@ func (h *Handler) LoginUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	resp, err := h.Service.LoginUser(ctx, req)
+	fmt.Println(resp)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -141,7 +143,7 @@ func (h *Handler) Test1(w http.ResponseWriter, r *http.Request) {
 	// response.JSON(w, http.StatusOK, string(jsonData))
 }
 
-// 4. Create Tenant User
+// 4. Create Tenant User (Users for Tenants)
 func (h *Handler) CreateTenantUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	defer r.Body.Close()
@@ -149,7 +151,7 @@ func (h *Handler) CreateTenantUser(w http.ResponseWriter, r *http.Request) {
 	// Extrating claims (Only Here)
 	claims, ok := auth.GetUserClaimsFromContext(ctx)
 
-	if claims.Role != "tenantadmin" {
+	if !auth.IsTenatAdminRole(claims.Role) {
 		response.Error(w, http.StatusForbidden, "Permisson not allowed , only tenant Admin can perform operations...")
 		return
 	}
@@ -172,6 +174,8 @@ func (h *Handler) CreateTenantUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Call Service
+
+	fmt.Println("Handler----->", req)
 
 	resp, err := h.Service.CreateTenantUser(ctx, claims, &req)
 	if err != nil {
@@ -293,5 +297,59 @@ func (h *Handler) DeleteTenantUser(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, map[string]interface{}{
 		"message": "user deleted successfully",
 	})
+
+}
+
+// Get Tenant All Unverified
+
+func (h *Handler) GetUnVerifiedTenantUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	// Extrating claims (Only Here)
+	claims, ok := auth.GetUserClaimsFromContext(ctx)
+
+	if !auth.IsTenatAdminRole(claims.Role) {
+		response.Error(w, http.StatusForbidden, "Permisson not allowed , only tenant Admin can perform operations...")
+		return
+	}
+	if !ok {
+		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
+		return
+	}
+
+	// Call Service
+	resp, err := h.Service.GetUnVerifiedTenantUser(ctx, claims)
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	response.JSON(w, http.StatusOK, resp)
+
+}
+
+// Get Tenant All Users
+
+func (h *Handler) GetAllTenantUsers(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	// Extrating claims (Only Here)
+	claims, ok := auth.GetUserClaimsFromContext(ctx)
+
+	if !auth.IsTenatAdminRole(claims.Role) {
+		response.Error(w, http.StatusForbidden, "Permisson not allowed , only tenant Admin can perform operations...")
+		return
+	}
+	if !ok {
+		response.Error(w, http.StatusUnauthorized, response.NotAuthorized)
+		return
+	}
+
+	// Call Service
+	resp, err := h.Service.GetAllTenantUsers(ctx, claims)
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	response.JSON(w, http.StatusOK, resp)
 
 }

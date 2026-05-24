@@ -642,3 +642,70 @@ func (s *Store) GetUserStatus(ctx context.Context, employeeID string) (bool, boo
 	return isVerified, isActive, isDeleted, nil
 
 }
+
+//14. Get All  Users by Tenant un Verified
+
+func (s *Store) GetUnVerifiedUsersByTenantID(ctx context.Context, tenantID int64) ([]User, error) {
+
+	query := `
+		SELECT
+    id,
+    tenant_id,
+    role_id,
+    employee_id,
+    user_name,
+    phone,
+    email,
+    is_verified,
+    is_active,
+    created_by,
+    updated_by,
+    created_at,
+    updated_at
+FROM "user"
+WHERE tenant_id = $1
+AND is_verified = FALSE
+AND is_deleted = FALSE
+ORDER BY id
+`
+
+	rows, err := s.db.QueryContext(ctx, query, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []User
+
+	for rows.Next() {
+		var user User
+
+		err := rows.Scan(
+			&user.ID,
+			&user.TenantID,
+			&user.RoleID,
+			&user.EmployeeID,
+			&user.UserName,
+			&user.Phone,
+			&user.Email,
+			&user.IsVerified,
+			&user.IsActive,
+			&user.CreatedBy,
+			&user.UpdatedBy,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}

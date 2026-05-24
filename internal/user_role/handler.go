@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/rajesh_bond/production/internal/auth"
 	"github.com/rajesh_bond/production/internal/common/response"
 )
@@ -73,6 +74,18 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	response.JSON(w, http.StatusCreated, createdRole)
+}
+
+func (h *Handler) GetUserRoleId(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	roleIDstr := chi.URLParam(r, "roleIDstr")
+	roleId, err := h.service.GetRoleIDByName(ctx, roleIDstr)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.JSON(w, http.StatusOK, roleId)
 }
 
 func (h *Handler) TestRole1(w http.ResponseWriter, r *http.Request) {

@@ -73,3 +73,10 @@ func (s *Service) GetRoleNameByID(ctx context.Context, roleID int64) (string, er
 
 	return s.store.GetRoleNameByID(ctx, roleID)
 }
+
+// Get the Role id from user role
+
+func (s *Service) GetRoleIDByName(ctx context.Context, roleName string) (int64, error) {
+
+	return s.store.GetRoleIDByName(ctx, roleName)
+}
