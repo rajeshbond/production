@@ -103,7 +103,8 @@ func IsSuper(role string) bool {
 func IsTenatAdminRole(reqRole string) bool {
 	fmt.Print("Inside isTenanat Admin ", reqRole)
 	allowedRoles := map[string]struct{}{
-		"tenantadmin": {},
+		// "tenantadmin": {},
+		"admintenant": {},
 		"tenantowner": {},
 	}
 

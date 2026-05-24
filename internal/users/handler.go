@@ -93,7 +93,7 @@ func (h *Handler) LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-
+	fmt.Println("rajesh ==== >", req)
 	resp, err := h.Service.LoginUser(ctx, req)
 	fmt.Println(resp)
 
