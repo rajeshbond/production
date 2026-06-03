@@ -9,6 +9,7 @@ import (
 
 	httpSwagger "github.com/swaggo/http-swagger"
 
+	"github.com/go-chi/cors"
 	"github.com/rajesh_bond/production/cmd/service"
 	"github.com/rajesh_bond/production/internal/defect"
 	downtime "github.com/rajesh_bond/production/internal/down_time.go"
@@ -45,6 +46,26 @@ import (
 func NewRouter(app *App) http.Handler {
 
 	r := chi.NewRouter()
+
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"http://localhost:3000"}, // React/Next.js frontend
+		AllowedMethods: []string{
+			"GET",
+			"POST",
+			"PUT",
+			"DELETE",
+			"OPTIONS",
+		},
+		AllowedHeaders: []string{
+			"Accept",
+			"Authorization",
+			"Content-Type",
+			"X-CSRF-Token",
+		},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)

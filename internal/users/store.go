@@ -436,6 +436,7 @@ func (s *Store) VerifyTenantUser(ctx context.Context, employeeID string, tenantI
 	WHERE employee_id = $1
 	  AND tenant_id = $2
 	  AND is_deleted = false
+		AND is_active = true
 	`
 
 	result, err := s.db.ExecContext(ctx, query, employeeID, tenantID, userID)
