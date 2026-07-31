@@ -119,6 +119,7 @@ func (h *Handler) Test1(w http.ResponseWriter, r *http.Request) {
 	resp := map[string]interface{}{
 		"user_id":     claims.UserID,
 		"employee_id": claims.EmployeeID,
+		"user_role":   claims.Role,
 		"tenant_id":   claims.TenantID,
 		"role_id":     claims.RoleID,
 		"username":    claims.Username,

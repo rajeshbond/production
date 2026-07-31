@@ -48,23 +48,25 @@ func NewRouter(app *App) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins: []string{"http://localhost:3000"}, // React/Next.js frontend
+		AllowedOrigins: []string{"*"}, // React/Next.js frontend
 		AllowedMethods: []string{
 			"GET",
 			"POST",
 			"PUT",
+			"PATCH",
 			"DELETE",
 			"OPTIONS",
 		},
-		AllowedHeaders: []string{
-			"Accept",
-			"Authorization",
-			"Content-Type",
-			"X-CSRF-Token",
-		},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
-		MaxAge:           300,
+		AllowedHeaders: []string{"*"},
+		// AllowedHeaders: []string{
+		// 	"Accept",
+		// 	"Authorization",
+		// 	"Content-Type",
+		// 	"X-CSRF-Token",
+		// },
+		// ExposedHeaders:   []string{"Link"},
+		// AllowCredentials: true,
+		// MaxAge:           300,
 	}))
 
 	r.Use(middleware.Logger)
